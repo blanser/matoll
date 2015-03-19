@@ -19,20 +19,21 @@ public class Process {
 		/*
 		 * examples for properties can be found under /src/test/resources/
 		 */
+		org.apache.log4j.BasicConfigurator.configure();
 		if (args.length == 0) {
 			System.out.println("Run: java Process ontology/pathToPropertyFile");
 			System.exit(1);
 		}
 		String endpoint = "http://dbpedia.org/sparql";
-		Boolean with_sentences = false;
+		Boolean with_sentences = true;
 		/*
 		 *in pathToIndex only one index for one language can be found 
 		 */
-		String pathToIndex = "/Users/swalter/Dropbox/Diss/Index/EnglishIndex";
-		String folderToSaveResourcesSentences = "/Users/swalter/Desktop/Resources";
-		String language = "en";
+		String pathToIndex = "/home/bettina/workspace03/IndexMAtoll";
+		String folderToSaveResourcesSentences = "/home/bettina/jaResources";
+		String language = "ja";
 		
-		IndexReader index = new IndexReader(pathToIndex);
+		IndexReader index = new IndexReader(pathToIndex,language);
 		List<List<String>> properties = new ArrayList<List<String>>();
 		try {
 			if(args[0].endsWith(".owl")){
