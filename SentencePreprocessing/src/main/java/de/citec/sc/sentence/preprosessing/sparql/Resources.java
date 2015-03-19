@@ -32,6 +32,7 @@ public class Resources {
 	public static List<List<String>> loadEntities(List<String> property, String resourceFolder) throws IOException{
 		List<List<String>> entities = new ArrayList<List<String>>();
 		String pathToPropertyFile = resourceFolder+property.get(1)+"/"+property.get(2)+"/"+property.get(3)+"/"+property.get(4);
+		//System.out.println("path to property file: "+pathToPropertyFile);
 		String entities_raw = "";
 		
 		File f = new File(pathToPropertyFile);
