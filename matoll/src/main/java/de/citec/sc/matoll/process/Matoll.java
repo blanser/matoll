@@ -86,6 +86,7 @@ public class Matoll {
 	public static void main(String[] args) throws IOException, ParserConfigurationException, SAXException, InstantiationException, IllegalAccessException, ClassNotFoundException {
 			
 		Logger logger = LogManager.getLogger(Matoll.class.getName());
+		
 
 		String directory;
 		String mode = "train";
@@ -359,10 +360,12 @@ public class Matoll {
 			
 		}
 		
-		Collections.sort(entries, new Comparator<LexicalEntry>() {
+
+		  Collections.sort(entries, new Comparator<LexicalEntry>() {
+	
 			 
 			            public int compare(LexicalEntry one, LexicalEntry two) {
-				                return (((LexicalEntry) one).getProvenance().getConfidence() > ((LexicalEntry) two).getProvenance().getConfidence()) ? -1 : 1;
+				                return (((LexicalEntry) one).getProvenance().getConfidence() >= ((LexicalEntry) two).getProvenance().getConfidence()) ? -1 : 1;
 				            }
 				             
 				        });
