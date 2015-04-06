@@ -48,6 +48,7 @@ public class Resources {
 		FileInputStream inputStream = new FileInputStream(pathToPropertyFile);
 	    try {
 	        entities_raw = IOUtils.toString(inputStream);
+	        
 	    } finally {
 	        inputStream.close();
 	    }
@@ -55,14 +56,15 @@ public class Resources {
 	    	/*
 	    	 * 1,3 are the uri's
 	    	 */
+	    	//System.out.println("line in property file: "+x);
 	    	String subj = x.split("\t")[1];
 	    	String obj = x.split("\t")[2];
-	    	
+	    	//System.out.println("subj: "+subj+" *** obj: "+obj);
 	    	List<String> pair = new ArrayList<String>();
 	    	
 	    	subj = cleanEntity(subj);
 	    	obj = cleanEntity(obj);
-	    	
+	    	//System.out.println("clean subj: "+subj+" *** clean obj: "+obj);
 	    	pair.add(subj);
 	    	pair.add(obj);
 	    	
@@ -82,15 +84,27 @@ public class Resources {
 		if((term.contains("XMLSchema#date")||term.contains("XMLSchema#gYear")) && term.contains("-")){
 			term = term.split("-")[0];
 		}
-		
+		// TODO further XMLSchema datatypes occur, such as gMonthDay
 		/*
 		 * 2: Fanny by Gaslight (TV series)
 		 */
 		if(term.contains("(")){
+			//System.out.println("term before cleaning: "+term);
 			term = term.split("\\(")[0];
+			// may not be what is wanted for other languages; cannot deal with nested brackets; cannot deal with ent labels where one type of bracket is missing
+			//term.replaceAll("\\(.*?\\)","");
+			//System.out.println("term after first cleaning step: "+term);
 			if(term.endsWith(" ")){
-				term = term.substring(0,term.lastIndexOf(" ")-1);
+				//System.out.println("index of whitespace: "+term.lastIndexOf(" "));
+				// -1 removes not only whitespace, but also last character of term!
+				// caused problems for Japanese
+				term = term.substring(0,term.lastIndexOf(" ")); //-1);
 			}
+			//System.out.println("term after second cleaning step: "+term);
+		}
+		if (term.contains("[")) {
+			term = term.split("\\[")[0];
+			term.trim();
 		}
 		
 		/*

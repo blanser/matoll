@@ -55,7 +55,7 @@ public class IndexReader {
 			
 			//Generate Boolean query out of term
 			BooleanQuery booleanQuery = new BooleanQuery();
-			
+			//System.out.println("before preprocessing: "+subj+" *** "+obj);
 			subj = preprocessing(subj);
 			obj = preprocessing(obj);
 			if (!IndexReader.language.equals("ja")) {
@@ -66,9 +66,12 @@ public class IndexReader {
 				QueryParser queryParser = new QueryParser("sentence", IndexReader.analyzer);
 				queryParser.setDefaultOperator(QueryParser.Operator.AND);
 				try {
+					System.out.println("parsing result of "+subj+" *** "+obj+": "+queryParser.parse(term).toString());
+					// TODO JapaneseAnalyzer removes stop words by default; leave it that way?
+					if (queryParser.parse(subj).toString().length()==0 || queryParser.parse(obj).toString().length()==0) return results;
 					booleanQuery.add(queryParser.parse(term), BooleanClause.Occur.MUST);
 				} catch (Exception e) {
-					System.err.println("Problem with "+term);
+					System.err.println("Problem with "+subj+" *** "+obj);
 				}
 			} else {
 				String[] tmp = term.split(" ");
@@ -129,6 +132,12 @@ public class IndexReader {
 		term = term.replace("\"","");
 		term = term.replace("+","");
 		term = term.replace("","");
+		// hyphen seems to affect output of QueryParser
+		//term = term.replace("-", "");
+		// JapaneseAnalyzer does not like stars...
+		term = term.replace("*", "");
+		// .. and opening square brackets
+		//term = term.replace("[", "");
 		return term;
 	}
 
@@ -137,6 +146,7 @@ public class IndexReader {
 		List<List<String>> sentences = new ArrayList<List<String>>();
 		
 		for(List<String> entity : entities){
+			//System.out.println("entity1: "+entity.get(0)+" *** entity2: "+entity.get(1));
 			try {
 				sentences.addAll(this.runSearch(entity.get(0), entity.get(1), 60));
 			} catch (IOException e) {
