@@ -95,13 +95,16 @@ public class Resources {
 			//term.replaceAll("\\(.*?\\)","");
 			//System.out.println("term after first cleaning step: "+term);
 			if(term.endsWith(" ")){
-				//System.out.println("index of whitespace: "+term.lastIndexOf(" "));
 				// -1 removes not only whitespace, but also last character of term!
-				// caused problems for Japanese
 				term = term.substring(0,term.lastIndexOf(" ")); //-1);
 			}
 			//System.out.println("term after second cleaning step: "+term);
 		}
+		if (term.contains("[")) {
+			term = term.split("\\[")[0];
+			term.trim();
+		}
+		
 		if (term.contains("[")) {
 			term = term.split("\\[")[0];
 			term.trim();
