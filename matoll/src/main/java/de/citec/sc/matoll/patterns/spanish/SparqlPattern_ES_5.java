@@ -1,14 +1,17 @@
 package de.citec.sc.matoll.patterns.spanish;
 
+import com.hp.hpl.jena.query.QueryExecution;
+import com.hp.hpl.jena.query.QueryExecutionFactory;
+import com.hp.hpl.jena.query.QuerySolution;
+import com.hp.hpl.jena.query.ResultSet;
 import java.util.List;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import com.hp.hpl.jena.rdf.model.Model;
-
-import de.citec.sc.bimmel.core.FeatureVector;
-import de.citec.sc.matoll.core.LexiconWithFeatures;
+import de.citec.sc.matoll.core.Language;
+import de.citec.sc.matoll.core.Lexicon;
 import de.citec.sc.matoll.patterns.SparqlPattern;
 import de.citec.sc.matoll.patterns.Templates;
 
@@ -16,6 +19,8 @@ public class SparqlPattern_ES_5 extends SparqlPattern{
 
 	Logger logger = LogManager.getLogger(SparqlPattern_ES_5.class.getName());
 	
+	
+	// Pattern 5 seems to work
 	
 	/*
 	PropSubj:Rita Wilson
@@ -82,45 +87,54 @@ public class SparqlPattern_ES_5 extends SparqlPattern{
 	4	esposa	esposo	n	NCFS000	_	2	_
 	5	de	de	s	SPS00	_	4	COMP
 	6	Boabdil	boabdil	n	NP00000	_	5	COMP
+	
+	// spouse	
+//	ID:3b
+//	property subject: Claudio
+//	property object: Mesalina
+//	sentence:: 
+//	1	a	a	s	SPS00	_	0	ROOT
+//	2	Mesalina	mesalina	n	NP00000	_	1	COMP
+//	3	,	,	f	Fc	_	2	punct
+//	4	esposa	esposo	n	NCFS000	_	2	_
+//	5	de	de	s	SPS00	_	4	COMP
+//	6	Claudio	claudio	n	NP00000	_	5	COMP
+//	7	,	,	f	Fc	_	6	punct
+//	8	emperador	emperador	n	NCMS000	_	6	MOD
+//	9	romano	romano	a	AQ0MS0	_	8	MOD
+//	10	)	)	f	Fpt	_	9	punct
+//	11	.	
 
 	äquivalent zu englisch query 2
 	 */
-			String query= "SELECT ?lemma ?e1_arg ?e2_arg ?prep  WHERE {"
-					+ "?y <conll:cpostag> ?lemma_pos . "
-					+ "{?y <conll:deprel> \"_\"."
-					+ "?y <conll:postag> \"NCFS000\".}"
-					//for marido example
-					+ "UNION"
-					+ "{?y <conll:deprel> \"COMP\"."
-					+ "?y <conll:postag> \"NCMS000\".}"
-					+ "UNION"
-					+ "{?y <conll:postag> \"NCFS000\". ?y <conll:deprel> \"_\". ?e1 <conll:deprel> \"_\".}"
-					+ "UNION"
-					+ "{?y <conll:postag> \"NCFS000\". ?y <conll:deprel> \"CONJ\". ?e1 <conll:deprel> \"_\".}"
-					+ "?y <conll:form> ?lemma . "
-					+ "?y <conll:deprel> ?lemma_grammar. "
-					+ "?y <conll:cpostag> \"n\" . "
-					+ "?y <conll:head> ?e1 . "
-					+ "?e1 <conll:cpostag> \"n\" . "
-					+ "?e1 <conll:form> ?e1_form . "
-					+ "?e1 <conll:deprel> ?e1_grammar . "
-					//argument to which the lemma points (e1) can not be root in a correct parse tree and also not a conjunction)
-					+ "FILTER( STR(?e1_grammar) != \"ROOT\"). "
-					+ "FILTER( STR(?e1_grammar) != \"CONJ\"). "
-					+ "?p <conll:head> ?y . "
-					+ "{?p <conll:deprel> \"COMP\" . }"
-					+ " UNION "
-					+ "{?p <conll:deprel> \"MOD\" . }"
-					+ "?p <conll:form> ?prep . "
-					+ "?p <conll:postag> \"SPS00\" . "
-					+ "?e2 <conll:head> ?p . "
-					+ "?e2 <conll:deprel> ?e2_grammar . "
-					+ "?e2 <conll:form> ?e2_form . "
-					+ "?e2 <conll:deprel>  \"COMP\". "
-					+ "?e2 <conll:cpostag> \"n\" . "
-					+ "?e1 <own:senseArg> ?e1_arg. "
-					+ "?e2 <own:senseArg> ?e2_arg. "
-					+ "}";
+        @Override
+        public String getQuery() {
+            String query= "SELECT ?lemma ?e1_arg ?e2_arg ?prep  WHERE {"
+
+            + "?comma <conll:lemma> \",\". "
+            + "?comma <conll:deprel> \"punct\". "
+            + "?comma <conll:head> ?e1 ."		
+
+            + "?noun <conll:postag> ?lemma_pos . "
+            + "FILTER regex(?lemma_pos, \"NC\") ."
+            + "?noun <conll:lemma> ?lemma . "
+            + "?noun <conll:head> ?e1 ."
+
+            + "?p <conll:head> ?noun ."
+            + "?p <conll:deprel> \"COMP\" ."
+            + "?p <conll:postag> ?prep_pos ."
+            + "FILTER regex(?prep_pos, \"SPS\") ."
+            + "?p <conll:lemma> ?prep ."
+
+            + "?e2 <conll:head> ?p ."
+            + "?e2 <conll:deprel> ?e1_deprel ."
+            + "FILTER regex(?e1_deprel, \"COMP\") ."
+
+            + "?e1 <own:senseArg> ?e1_arg. "
+            + "?e2 <own:senseArg> ?e2_arg. "
+            + "}";
+            return query;
+        }
 			
 	@Override
 	public String getID() {
@@ -128,15 +142,41 @@ public class SparqlPattern_ES_5 extends SparqlPattern{
 	}
 
 	@Override
-	public void extractLexicalEntries(Model model, LexiconWithFeatures lexicon) {
-		FeatureVector vector = new FeatureVector();
-
-		vector.add("freq",1.0);
-		vector.add(this.getID(),1.0);
+	public void extractLexicalEntries(Model model, Lexicon lexicon) {
 		
 		List<String> sentences = this.getSentences(model);
 		
-		Templates.getNounWithPrep(model, lexicon, vector, sentences, query, this.getReference(model), logger, this.getLemmatizer(), this.getDebugger());	
+		QueryExecution qExec = QueryExecutionFactory.create(getQuery(), model) ;
+                ResultSet rs = qExec.execSelect() ;
+                String noun = null;
+                String e1_arg = null;
+                String e2_arg = null;
+                String preposition = null;
+
+                try {
+                 while ( rs.hasNext() ) {
+                         QuerySolution qs = rs.next();
+
+
+                         try{
+                                 noun = qs.get("?lemma").toString();
+                                 e1_arg = qs.get("?e1_arg").toString();
+                                 e2_arg = qs.get("?e2_arg").toString();	
+                                 preposition = qs.get("?prep").toString();	
+                          }
+	        	 catch(Exception e){
+	     	    	e.printStackTrace();
+                        }
+                     }
+                }
+                catch(Exception e){
+                    e.printStackTrace();
+                }
+                qExec.close() ;
+    
+		if(noun!=null && e1_arg!=null && e2_arg!=null && preposition!=null) {
+                    Templates.getNounWithPrep(model, lexicon, sentences, noun, e1_arg, e2_arg, preposition, this.getReference(model), logger, this.getLemmatizer(),Language.ES,getID());
+            } 	
 		
 	}
 

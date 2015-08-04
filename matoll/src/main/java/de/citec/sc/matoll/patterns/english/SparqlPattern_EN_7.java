@@ -10,20 +10,10 @@ import com.hp.hpl.jena.query.QueryExecutionFactory;
 import com.hp.hpl.jena.query.QuerySolution;
 import com.hp.hpl.jena.query.ResultSet;
 import com.hp.hpl.jena.rdf.model.Model;
-
-import de.citec.sc.bimmel.core.FeatureVector;
-import de.citec.sc.matoll.core.LexicalEntry;
-import de.citec.sc.matoll.core.LexiconWithFeatures;
-import de.citec.sc.matoll.core.Sense;
-import de.citec.sc.matoll.core.SenseArgument;
-import de.citec.sc.matoll.core.SimpleReference;
-import de.citec.sc.matoll.core.SyntacticArgument;
-import de.citec.sc.matoll.core.SyntacticBehaviour;
+import de.citec.sc.matoll.core.Language;
+import de.citec.sc.matoll.core.Lexicon;
 import de.citec.sc.matoll.patterns.SparqlPattern;
 import de.citec.sc.matoll.patterns.Templates;
-import de.citec.sc.matoll.process.Matoll;
-import de.citec.sc.matoll.utils.Lemmatizer;
-
 public class SparqlPattern_EN_7 extends SparqlPattern {
 
 	
@@ -58,7 +48,11 @@ sentence:Deshabandu Professor Nandadasa Kodagoda MRCP , MD was the former Vice C
 	
 	
 // pci: Why is this not the same as Pattern 4 ???	
-	
+        /*
+        Pattern 4 contains a relation verb, which is not needed according to this pattern. But of course things, which have a verb, do also match.
+        */
+    @Override
+    public String getQuery() {
 	String query = "SELECT ?lemma ?e1_arg ?e2_arg ?prep WHERE"
 			+ "{ "
 			+ "?e1 <conll:form> ?e1_form . "
@@ -94,21 +88,48 @@ sentence:Deshabandu Professor Nandadasa Kodagoda MRCP , MD was the former Vice C
 			+ "?e1 <own:senseArg> ?e1_arg. "
 			+ "?e2 <own:senseArg> ?e2_arg. "
 			+ "}";
+        return query;
+    }
 	
-	public void extractLexicalEntries(Model model, LexiconWithFeatures lexicon) {
-		
-		FeatureVector vector = new FeatureVector();
-		
-		vector.add("freq",1.0);
-		vector.add(this.getID(),1.0);
-		
+        @Override
+	public void extractLexicalEntries(Model model, Lexicon lexicon) {		
 		List<String> sentences = this.getSentences(model);
 		
-		Templates.getNounWithPrep(model, lexicon, vector, sentences, query, this.getReference(model), logger, this.getLemmatizer(), this.getDebugger());
+		QueryExecution qExec = QueryExecutionFactory.create(getQuery(), model) ;
+                ResultSet rs = qExec.execSelect() ;
+                String noun = null;
+                String e1_arg = null;
+                String e2_arg = null;
+                String preposition = null;
+
+                try {
+                 while ( rs.hasNext() ) {
+                         QuerySolution qs = rs.next();
+
+                         try{
+                                 noun = qs.get("?lemma").toString();
+                                 e1_arg = qs.get("?e1_arg").toString();
+                                 e2_arg = qs.get("?e2_arg").toString();	
+                                 preposition = qs.get("?prep").toString();	
+                          }
+	        	 catch(Exception e){
+	     	    	e.printStackTrace();
+                        }
+                     }
+                }
+                catch(Exception e){
+                    e.printStackTrace();
+                }
+                qExec.close() ;
+    
+		if(noun!=null && e1_arg!=null && e2_arg!=null && preposition!=null) {
+                    Templates.getNounWithPrep(model, lexicon, sentences, noun, e1_arg, e2_arg, preposition, this.getReference(model), logger, this.getLemmatizer(),Language.EN,getID());
+            } 
 		
 	}
 	
 
+        @Override
 	public String getID() {
 		return "SPARQLPattern_EN_7";
 	}

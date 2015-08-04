@@ -1,6 +1,11 @@
 package de.citec.sc.matoll.io;
 
 
+import de.citec.sc.matoll.core.Language;
+import static de.citec.sc.matoll.core.Language.DE;
+import static de.citec.sc.matoll.core.Language.EN;
+import static de.citec.sc.matoll.core.Language.ES;
+import static de.citec.sc.matoll.core.Language.JA;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -41,11 +46,14 @@ import de.citec.sc.matoll.patterns.german.SparqlPattern_DE_8;
 import de.citec.sc.matoll.patterns.german.SparqlPattern_DE_9;
 import de.citec.sc.matoll.patterns.spanish.SparqlPattern_ES_1;
 import de.citec.sc.matoll.patterns.spanish.SparqlPattern_ES_2;
+import de.citec.sc.matoll.patterns.spanish.SparqlPattern_ES_2b;
+import de.citec.sc.matoll.patterns.spanish.SparqlPattern_ES_2c;
 import de.citec.sc.matoll.patterns.spanish.SparqlPattern_ES_3;
 import de.citec.sc.matoll.patterns.spanish.SparqlPattern_ES_4;
 import de.citec.sc.matoll.patterns.spanish.SparqlPattern_ES_5;
 import de.citec.sc.matoll.patterns.spanish.SparqlPattern_ES_6;
 import de.citec.sc.matoll.patterns.spanish.SparqlPattern_ES_7;
+import de.citec.sc.matoll.patterns.spanish.SparqlPattern_ES_7b;
 import de.citec.sc.matoll.patterns.spanish.SparqlPattern_ES_8;
 import de.citec.sc.matoll.patterns.spanish.SparqlPattern_ES_9;
 import de.citec.sc.matoll.patterns.japanese.*;
@@ -62,9 +70,11 @@ public class Config {
 	String Output = "eval";
 	Boolean Coreference = false;
 	String Classifier = "de.citec.sc.matoll.classifiers.FreqClassifier";
-	String Language = "EN";
+	Language Language = EN;
 	Integer numItems;
 	String Frequency;
+        String BaseUri;
+
 	
 	List<SparqlPattern> Patterns = null;
 	
@@ -72,7 +82,7 @@ public class Config {
 	{
 	}
 	
-	public void loadFromFile(String configFile) throws ParserConfigurationException, SAXException, IOException, InstantiationException, IllegalAccessException, ClassNotFoundException, DOMException {
+	public void loadFromFile(String configFile) throws ParserConfigurationException, SAXException, IOException, InstantiationException, IllegalAccessException, ClassNotFoundException, DOMException, Exception {
 	
 		// add logger here...
 		System.out.print("Reading configuration from: "+configFile+"\n");
@@ -97,9 +107,9 @@ public class Config {
 									
 			if (node.getNodeName().equals("Language"))
 			{
-				this.Language = node.getTextContent();
+				this.Language = mapToLanguage(node.getTextContent());
 				
-				if (Language.equals("EN"))
+				if (Language.equals(EN))
 				{
 					Patterns = new ArrayList<SparqlPattern>();
 					
@@ -115,7 +125,7 @@ public class Config {
 					
 					logger.info("Adding patterns 1-8 (EN) to pattern library \n");
 				}
-				if (Language.equals("DE"))
+				if (Language.equals(DE))
 				{
 					Patterns = new ArrayList<SparqlPattern>();
 					
@@ -133,19 +143,23 @@ public class Config {
 					logger.info("Adding patterns 1-10 (DE) to pattern library \n");
 				}
 				
-				if (Language.equals("ES"))
+				if (Language.equals(ES))
 				{
 					Patterns = new ArrayList<SparqlPattern>();
 					
 					Patterns.add(new SparqlPattern_ES_1());
 					Patterns.add(new SparqlPattern_ES_2());
+                                        Patterns.add(new SparqlPattern_ES_2b());
+                                        Patterns.add(new SparqlPattern_ES_2c());
 					Patterns.add(new SparqlPattern_ES_3());
 					Patterns.add(new SparqlPattern_ES_4());
 					Patterns.add(new SparqlPattern_ES_5());
 					Patterns.add(new SparqlPattern_ES_6());
 					Patterns.add(new SparqlPattern_ES_7());
+                                        Patterns.add(new SparqlPattern_ES_7b());
 					Patterns.add(new SparqlPattern_ES_8());
 					Patterns.add(new SparqlPattern_ES_9());
+                                        
 					
 					logger.info("Adding patterns 1-9 (ES) to pattern library \n");
 				}
@@ -174,6 +188,11 @@ public class Config {
 			if (node.getNodeName().equals("Classifier"))
 			{
 				this.Classifier = node.getTextContent();
+			}
+                        
+                        if (node.getNodeName().equals("BaseURI"))
+			{
+				this.BaseUri = node.getTextContent();
 			}
 			
 			if (node.getNodeName().equals("OutputLexicon"))
@@ -225,6 +244,15 @@ public class Config {
 		
 	}
 
+        
+        private Language mapToLanguage(String s) throws Exception {
+            
+            if      (s.toLowerCase().equals("en") || s.toLowerCase().equals("eng")) return EN;
+            else if (s.toLowerCase().equals("de") || s.toLowerCase().equals("ger")) return DE;
+            else if (s.toLowerCase().equals("es") || s.toLowerCase().equals("spa")) return ES;
+            else if (s.toLowerCase().equals("ja") || s.toLowerCase().equals("jpn")) return JA;
+            else throw new Exception("Language '" + s + "' unknown.");
+        }
 	
 
 	public String getModel() {
@@ -290,13 +318,13 @@ public class Config {
 
 
 
-	public String getLanguage() {
+	public Language getLanguage() {
 		return Language;
 	}
 
 
 
-	public void setLanguage(String language) {
+	public void setLanguage(Language language) {
 		Language = language;
 	}
 
@@ -314,5 +342,9 @@ public class Config {
 		
 		return null;
 	}
+        
+        public String getBaseUri() {
+            return BaseUri;
+        }
 
 }

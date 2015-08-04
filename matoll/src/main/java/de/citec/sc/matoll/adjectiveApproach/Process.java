@@ -17,10 +17,12 @@ import org.apache.jena.riot.RDFFormat;
 
 import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.rdf.model.ModelFactory;
+import de.citec.sc.matoll.core.Language;
 
 import de.citec.sc.matoll.core.LexicalEntry;
 import de.citec.sc.matoll.core.Lexicon;
 import de.citec.sc.matoll.core.Provenance;
+import de.citec.sc.matoll.core.Reference;
 import de.citec.sc.matoll.core.Restriction;
 import de.citec.sc.matoll.core.Sense;
 import de.citec.sc.matoll.core.SenseArgument;
@@ -30,6 +32,9 @@ import de.citec.sc.matoll.io.LexiconSerialization;
 import de.citec.sc.matoll.utils.OntologyImporter;
 import edu.stanford.nlp.process.Morphology;
 import edu.stanford.nlp.tagger.maxent.MaxentTagger;
+import java.util.HashMap;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import weka.classifiers.Classifier;
 import weka.classifiers.functions.SMO;
 import weka.core.Instance;
@@ -45,22 +50,25 @@ public class Process {
 	public static void main(String[] args) throws Exception {
 		// TODO Auto-generated method stub
 
-		String path_annotatedFiles = "/Users/swalter/Documents/annotatedAdjectives/";
-		String path_raw_files = "/Users/swalter/Documents/plainAdjectives/";
+		String path_annotatedFiles = "/Users/swalter/Backup/Documents/annotatedAdjectives/";
+		String path_raw_files = "/Users/swalter/Backup/Documents/plainAdjectives/";
 		String path_to_write_arff = "/Users/swalter/Desktop/adjective.arff";
 		String path_weka_model = path_to_write_arff.replace(".arff", ".model");
-		String path_to_wordnet = "/Users/swalter/Software/WordNet-3.0";
+		String path_to_wordnet = "/Users/swalter/Backup/Software/WordNet-3.0";
 		String path_to_objects = "/Users/swalter/Desktop/Resources/";
 		/*
 		 * TODO: Automatically import via maven
 		 */
 		
-		String path_to_tagger_model ="resources/english-left3words/english-caseless-left3words-distsim.tagger";
-		Classifier cls = new SMO();
+		//String path_to_tagger_model ="resources/english-left3words/english-caseless-left3words-distsim.tagger";
+                String path_to_tagger_model ="resources/english-caseless-left3words-distsim.tagger";
+		SMO smo = new SMO();
+                smo.setOptions(weka.core.Utils.splitOptions("-M"));
+                Classifier cls = smo; 
 		
 		List<String> csv_output = new ArrayList<String>();
 		
-		OntologyImporter importer = new OntologyImporter("/Users/swalter/Downloads/dbpedia_2014.owl","RDF/XML");
+		OntologyImporter importer = new OntologyImporter("/Users/swalter/Backup/Downloads/dbpedia_2014.owl","RDF/XML");
 		
 		ExtractData adjectiveExtractor = new ExtractData(path_to_wordnet);
 		
@@ -128,6 +136,8 @@ public class Process {
 		int uri_counter = 0;
 		int uri_used = 0;
 		HashSet<String> properties = importer.getProperties();
+//                properties.clear();
+//                properties.add("http://dbpedia.org/ontology/religion");
 		for(String uri:properties){
 			uri_counter+=1;
 			System.out.println("URI:"+uri);
@@ -156,18 +166,27 @@ public class Process {
 							 /*
 							  * predict
 							  */
-							 List<String> result = prediction.predict(current);
-							 if(result.get(0).equals("1")){
+							 HashMap<Integer, Double> result = prediction.predict(current);
+                                                         for(int key : result.keySet()){
+                                                            if(key==1){
 								 counter+=1;
-								 System.out.println("Add to lexica");
+								 /*System.out.println("Add to lexica");
 								 System.out.println("Adjective:"+adjectiveObject.getAdjectiveTerm());
 								 System.out.println("Object:"+adjectiveObject.getObject());
 								 System.out.println("Frequency:"+adjectiveObject.getFrequency());
-								 System.out.println();
-								 lexicon.addEntry(getLexicalEntry(lexicon,adjectiveObject.getAdjectiveTerm(),adjectiveObject.getObjectURI(),uri,
-										 adjectiveObject.getFrequency(),result.get(1)));
-								 csv_output.add(adjectiveObject.getAdjectiveTerm()+";"+adjectiveObject.getObject()+";"+uri+"\n");
-							 }						 
+								 System.out.println();*/
+                                                                 try{
+                                                                     createLexicalEntry(lexicon,adjectiveObject.getAdjectiveTerm(),adjectiveObject.getObjectURI(),uri, adjectiveObject.getFrequency(),result.get(key));
+                                                                    csv_output.add(adjectiveObject.getAdjectiveTerm()+";"+adjectiveObject.getObject()+";"+uri+"\n");
+                                                                 }
+                                                                 catch(Exception e){
+                                                                        e.printStackTrace();
+                                                                 }
+								 
+							 } 
+                                                         }
+                                                         
+							 						 
 						 }
 					}
 				}
@@ -179,7 +198,7 @@ public class Process {
 		
 		Model model = ModelFactory.createDefaultModel();
 		
-		LexiconSerialization serializer = new LexiconSerialization();
+		LexiconSerialization serializer = new LexiconSerialization(Language.EN);
 		
 		serializer.serialize(lexicon, model);
 		
@@ -216,22 +235,20 @@ public class Process {
 		
 	}
 
-	private static LexicalEntry getLexicalEntry(Lexicon lexicon,String adjective, String object_uri, String uri, int frequency, String distribution) {
-LexicalEntry entry;
-		
-		entry = lexicon.createNewEntry(adjective);
-		
-		entry.setCanonicalForm(adjective);
+	private static void createLexicalEntry(Lexicon lexicon,String adjective, String object_uri, String uri, int frequency, double distribution) {
+                LexicalEntry entry = new LexicalEntry(Language.EN);
+		entry.setCanonicalForm(adjective+"@en");
+                
 		
 		Sense sense = new Sense();
-		
-		/*
-		 * TODO object should be a URI and not a label
-		 */
-		sense.setReference(new Restriction(object_uri,uri));
-		
-		entry.setSense(sense);
-		
+                Reference ref = new Restriction(lexicon.getBaseURI()+"RestrictionClass_"+frag(uri)+"_"+frag(object_uri),object_uri,uri);
+		//Reference ref = new Restriction(lexicon.getBaseURI()+"RestrictionClass_"+frag(uri)+"_"+frag(adjective),object_uri,uri);
+                //Reference ref = new Restriction(lexicon.getBaseURI()+"RestrictionClass",object_uri,uri);
+
+                sense.setReference(ref);
+                
+                entry.setURI(lexicon.getBaseURI()+"LexicalEntry_"+adjective.replace(" ","_")+"_as_AdjectiveRestriction");
+				
 		entry.setPOS("http://www.lexinfo.net/ontology/2.0/lexinfo#adjective");
 		
 		SyntacticBehaviour behaviour = new SyntacticBehaviour();
@@ -242,40 +259,36 @@ LexicalEntry entry;
 		
 		sense.addSenseArg(new SenseArgument("http://lemon-model.net/lemon#isA","1"));
 		
-		entry.setSyntacticBehaviour(behaviour);
+		entry.addSyntacticBehaviour(behaviour,sense);
 		
-		Provenance provenance = new Provenance();
 		
-		provenance.setAgent("Distribution");
-		provenance.setConfidence(Double.valueOf(distribution));
-		
-		provenance.setAgent("Frequency");
-		provenance.setConfidence((double) frequency);
-		
-		entry.setProvenance(provenance);
-		
-		entry = lexicon.createNewEntry(adjective);
-		
-		entry.setSense(sense);
-		
-		entry.setPOS("http://www.lexinfo.net/ontology/2.0/lexinfo#adjective");
-
-		behaviour = new SyntacticBehaviour();
-		
-		behaviour.setFrame("http://www.lexinfo.net/ontology/2.0/lexinfo#AdjectiveAttributiveFrame");
 				
-		behaviour.add(new SyntacticArgument("http://www.lexinfo.net/ontology/2.0/lexinfo#attributiveArg","1",null));
+		SyntacticBehaviour behaviour2 = new SyntacticBehaviour();
+		
+		behaviour2.setFrame("http://www.lexinfo.net/ontology/2.0/lexinfo#AdjectiveAttributiveFrame");
+				
+		behaviour2.add(new SyntacticArgument("http://www.lexinfo.net/ontology/2.0/lexinfo#attributiveArg","1",null));
 		
 		sense.addSenseArg(new SenseArgument("http://lemon-model.net/lemon#isA","1"));
 		
-		entry.setSyntacticBehaviour(behaviour);
+		entry.addSyntacticBehaviour(behaviour2,sense);
+                
+                //entry.addSense(sense);
+                
+                Provenance provenance = new Provenance();
 		
+		//provenance.setAgent("Distribution");
+		provenance.setConfidence(distribution);
 		
-		entry.setProvenance(provenance);
+		//provenance.setAgent("Frequency");
+                provenance.setFrequency(frequency);
 		
-		lexicon.addEntry(entry);
+		entry.addProvenance(provenance,sense);
 		
-		return entry;
+		if(distribution>=0.5&&!object_uri.contains("%")){
+                    lexicon.addEntry(entry);
+                }
+		
 	}
 
 	private static void writeSingleArffFile(String path, String arff_prefix,
@@ -388,5 +401,27 @@ LexicalEntry entry;
 		 
 		
 	}
+        
+        private static String frag(String uri) {
+            
+            uri = uri.replace("=","");
+            uri = uri.replace("!","");
+            uri = uri.replace("?","");
+            uri = uri.replace("*","");
+            uri = uri.replace(",","");
+            uri = uri.replace("(","");
+            uri = uri.replace(")","");
+            uri = uri.replace(">","");
+            uri = uri.replace("<","");
+            uri = uri.replace("|"," ");
+            String  pattern =  ".+(/|#)(\\w+)";
+            Matcher matcher = (Pattern.compile(pattern)).matcher(uri);
+        
+            while (matcher.find()) {
+                  return matcher.group(2).replace(" ","_");
+            }
+            
+            return uri.replace(" ","_");
+        }
 
 }

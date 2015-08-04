@@ -12,6 +12,11 @@ import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.rdf.model.RDFNode;
 import com.hp.hpl.jena.rdf.model.Statement;
 import com.hp.hpl.jena.rdf.model.StmtIterator;
+import de.citec.sc.matoll.core.Language;
+import de.citec.sc.matoll.coreference.Coreference;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 
 import de.citec.sc.matoll.process.Matoll;
 
@@ -35,17 +40,23 @@ public class ModelPreprocessor {
 	HashMap<String,Integer> Node2IntMapping;
 	
 	HashMap<String,String> senseArgs;
+
+    
+        boolean     doCoref;
+        Coreference coreference = new Coreference();
 	
+        Language    language;
+        
 	Set<String> POS;
+
 	
-	String language;
-	
-	public ModelPreprocessor()
+	public ModelPreprocessor(Language language)
 	{
+                this.language = language; 
 		POS = new HashSet<String>();
+                doCoref = false;
 	}
-	
-	boolean coref = false;
+	        
 	/**
          * @param model
          * @param subjectEntity
@@ -113,7 +124,11 @@ public class ModelPreprocessor {
 			}
 		}
 		
-		if (coref) computeCoreference(model);
+                if (doCoref) try {
+                    coreference.computeCoreference(model,language);
+                } catch (Exception ex) {
+                    Logger.getLogger(ModelPreprocessor.class.getName()).log(Level.SEVERE, null, ex);
+                }
 				
 	}
         /**
@@ -147,59 +162,7 @@ public class ModelPreprocessor {
 		}
 		
 	}
-        /**
-         * 
-         * @param model 
-         */
-	private void computeCoreference(Model model) {
-		
-		String lemma;
-		Integer number;
-		
-		// System.out.print("Computing coreference!!!\n");
-		
-		for (String resource: Resource2Lemma.keySet())
-		{
-			lemma = Resource2Lemma.get(resource);
-			
-			if (lemma.equals("which") || lemma.equals("who"))
-			{
-				// System.out.print("Contains "+lemma+"\n");
-				
-				number = Node2IntMapping.get(resource);
-				
-				// System.out.print("... at position "+number+"\n");
-				
-				if (number > 1)
-				{
-					if (Resource2Lemma.get(Int2NodeMapping.get(number -1)).equals(","))
-					{
-						
-						// System.out.print("... previous one is a comma "+(number-1)+"\n");
-						if (number > 2 && senseArgs.containsKey(Int2NodeMapping.get(number -2)))
-						{
-							model.add(model.getResource(resource), model.createProperty("own:senseArg"), model.createResource(senseArgs.get(Int2NodeMapping.get(number -2))));
-							// System.out.print("Relative pronoun" + lemma + " resolved to "+(number-2)+"!!!\n");
-						}
-						
-					}
-					else
-					{
-						if (senseArgs.containsKey(Int2NodeMapping.get(number -1)))
-						{
-							model.add(model.getResource(resource), model.createProperty("own:senseArg"), model.createResource(senseArgs.get(Int2NodeMapping.get(number -1))));
-							// System.out.print("Relative pronoun" + lemma + " resolved to "+(number-1)+"!!!\n");
-						}
-					}
-				}
-				
-				
-			}
-			
-		}
-		
-		
-	}
+
         /**
          * 
          * @param resources
@@ -394,17 +357,15 @@ public class ModelPreprocessor {
 	}
 
 	public void setCoreferenceResolution(boolean b) {
-		coref = b;
-		
+		doCoref = b;	
 	}
 
 	public void setPOS(Set<String> pos) {
-		POS = pos;
-		
+		POS = pos;		
 	}
-	public void setLanguage(String lang) {
-		language = lang;
-		
-	}
+        
+        public void setLanguage(Language l) {
+               language = l;
+        }
 
 }

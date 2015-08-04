@@ -5,28 +5,29 @@ import java.util.List;
 
 import com.hp.hpl.jena.rdf.model.Model;
 
-import de.citec.sc.matoll.core.LexiconWithFeatures;
-import de.citec.sc.matoll.utils.Debug;
+import de.citec.sc.matoll.core.Lexicon;
 import de.citec.sc.matoll.utils.Lemmatizer;
+import java.util.HashMap;
+import java.util.Map;
 
 public class PatternLibrary {
 
 	List<SparqlPattern> Patterns;
+        Map<String,String> PatternSparqlMapping = new HashMap<>();
+
 	
 
 	Lemmatizer Lemmatizer;
         
-        private static Debug debugger;
 	
         /**
          * Initialization of PatternLibrary 
          * @param debugger 
          */
-	public PatternLibrary(Debug debugger)
+	public PatternLibrary()
 	{
 		Patterns = new ArrayList<SparqlPattern>();
 		Lemmatizer = null;
-                PatternLibrary.debugger=debugger;
                 
 	}
 
@@ -47,11 +48,9 @@ public class PatternLibrary {
 	public void addPattern(SparqlPattern pattern)
 	{
 		Patterns.add(pattern);
-                debugger.print("add pattern "+pattern.toString(), PatternLibrary.class.getName());
 		
 		if (Lemmatizer != null)
 			pattern.setLemmatizer(Lemmatizer);
-                pattern.setDebugger(debugger);
 	}
 	
         /**
@@ -60,14 +59,12 @@ public class PatternLibrary {
          * @param model Model, containing a parsed sentence
          * @param lexicon Lexicon
          */
-	public void extractLexicalEntries(Model model, LexiconWithFeatures lexicon)
+	public void extractLexicalEntries(Model model, Lexicon lexicon)
 	{
 		for (SparqlPattern pattern: Patterns)
 		{
-                        debugger.print("Running: "+pattern.getID(), PatternLibrary.class.getName());
 			if (Lemmatizer != null)
 				pattern.setLemmatizer(Lemmatizer);
-                        pattern.setDebugger(debugger);
 			pattern.extractLexicalEntries(model, lexicon);
 		}
 		
@@ -75,8 +72,15 @@ public class PatternLibrary {
 
 	public void setPatterns(List<SparqlPattern> patterns) {
 		Patterns = patterns;
+                patterns.stream().forEach((p) -> {
+                    PatternSparqlMapping.put(p.getID(), p.getQuery());
+            });
 		
 	}
+        
+        public Map<String, String> getPatternSparqlMapping() {
+            return PatternSparqlMapping;
+        }
 	
 	
 }

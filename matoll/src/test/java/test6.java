@@ -9,18 +9,16 @@ import org.apache.jena.riot.RDFFormat;
 import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.rdf.model.ModelFactory;
 
-import de.citec.sc.bimmel.core.FeatureVector;
+import de.citec.sc.matoll.core.Language;
 import de.citec.sc.matoll.core.LexicalEntry;
 import de.citec.sc.matoll.core.Lexicon;
-import de.citec.sc.matoll.core.LexiconWithFeatures;
 import de.citec.sc.matoll.core.Provenance;
+import de.citec.sc.matoll.core.Reference;
 import de.citec.sc.matoll.core.Restriction;
 import de.citec.sc.matoll.core.Sense;
 import de.citec.sc.matoll.core.SenseArgument;
 import de.citec.sc.matoll.core.SyntacticArgument;
 import de.citec.sc.matoll.core.SyntacticBehaviour;
-import de.citec.sc.matoll.evaluation.LexiconEvaluation;
-import de.citec.sc.matoll.io.LexiconLoader;
 import de.citec.sc.matoll.io.LexiconSerialization;
 
 public class test6 {
@@ -29,18 +27,16 @@ public class test6 {
 		
 		Lexicon lexicon = new Lexicon();
 		
-		LexicalEntry entry;
+		LexicalEntry entry = new LexicalEntry(Language.EN);
 		
-		entry = lexicon.createNewEntry("female");
+		//entry = lexicon.createNewEntry("female",Language.EN);
 		
 		entry.setCanonicalForm("female");
 		
 		Sense sense = new Sense();
-		
-		sense.setReference(new Restriction("http://dbpedia.org/resource/Female","http://dbpedia.org/ontology/gender"));
-		
-		entry.setSense(sense);
-		
+		Reference ref = new Restriction(lexicon.getBaseURI()+"RestrictionClass_gender_Female","http://dbpedia.org/ontology/gender","http://dbpedia.org/resource/Female");
+		sense.setReference(ref);
+				
 		entry.setPOS("http://www.lexinfo.net/ontology/2.0/lexinfo#adjective");
 		
 		SyntacticBehaviour behaviour = new SyntacticBehaviour();
@@ -51,19 +47,17 @@ public class test6 {
 		
 		sense.addSenseArg(new SenseArgument("http://lemon-model.net/lemon#isA","1"));
 		
-		entry.setSyntacticBehaviour(behaviour);
+		entry.addSyntacticBehaviour(behaviour,sense);
 		
 		Provenance provenance = new Provenance();
 		
 		provenance.setAgent("AdjectiveExtractor");
 		provenance.setConfidence(0.8);
 		
-		entry.setProvenance(provenance);
+		entry.addProvenance(provenance,sense);
 		
-		entry = lexicon.createNewEntry("female");
-		
-		entry.setSense(sense);
-		
+		//entry = lexicon.createNewEntry("female");
+				
 		entry.setPOS("http://www.lexinfo.net/ontology/2.0/lexinfo#adjective");
 
 		behaviour = new SyntacticBehaviour();
@@ -74,17 +68,13 @@ public class test6 {
 		
 		sense.addSenseArg(new SenseArgument("http://lemon-model.net/lemon#isA","1"));
 		
-		entry.setSyntacticBehaviour(behaviour);
+		entry.addSyntacticBehaviour(behaviour,sense);
 		
-		
-		
-		entry.setProvenance(provenance);
-		
-		lexicon.addEntry(entry);
+                lexicon.addEntry(entry);
 		
 		Model model = ModelFactory.createDefaultModel();
 		
-		LexiconSerialization serializer = new LexiconSerialization();
+		LexiconSerialization serializer = new LexiconSerialization(Language.EN);
 		
 		serializer.serialize(lexicon, model);
 		

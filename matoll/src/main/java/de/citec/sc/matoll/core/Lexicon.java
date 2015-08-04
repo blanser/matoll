@@ -24,6 +24,8 @@ public class Lexicon {
 		map = new HashMap<String,List<LexicalEntry>>();
 		
 		references = new HashSet<Reference>();
+                
+                this.baseURI = "http://dblexipedia.org/lexicon/";
 	}
 	
 	public Lexicon(String baseURI)
@@ -39,7 +41,6 @@ public class Lexicon {
 	
 	public void addEntry(LexicalEntry entry)
 	{
-		LexicalEntry containedEntry;
 		
 		if(!entries.contains(entry))
 		{
@@ -60,34 +61,82 @@ public class Lexicon {
 			}
 		}
 		else
-		{
+		{   
+                        /*
+                    This is the entry from the list entries, which is updated
+                    */
+                        //System.out.println("Update entry");
+                        LexicalEntry containedEntry;
 	
 			containedEntry = getLexicalEntry(entry);
-			
-			List<String> sentences = new ArrayList<String>();
-			
-			sentences.addAll(entry.getSentences());
-			sentences.addAll(containedEntry.getSentences());
-			
-			containedEntry.setSentences(sentences);
-			
+		                        
+//                        
+//			List<String> sentences = new ArrayList<String>();
+//                        sentences.addAll(entry.getSentences());
+//                        sentences.addAll(containedEntry.getSentences());
+//                        
+//			
+//			
+//			containedEntry.setSentences(sentences);
+                        
+                        HashMap<Sense, HashSet<SyntacticBehaviour>> senseBehaviours = entry.getSenseBehaviours();
+                        senseBehaviours.keySet().stream().map((sense) -> {
+                            HashSet<SyntacticBehaviour> behaviours = senseBehaviours.get(sense);
+                            containedEntry.addAllSyntacticBehaviour(behaviours, sense);
+                        return sense;
+                        }).forEach((sense) -> {
+                            /*
+                            Update Provenance
+                            */
+                            Provenance provenance = entry.getProvenance(sense);
+                            containedEntry.addProvenance(provenance, sense);
+                        });
+
+                        
+                        
+                        
 			
 		}
 	
-		if (entry.getSense() != null)
-		
-			references.add(entry.getSense().getReference());
+		if (entry.getSenseBehaviours() != null)
+                    entry.getReferences().stream().forEach((reference) -> {
+                        references.add(reference);
+                });
 			
 	}
 
+        public String getBaseURI() 
+        {
+               return baseURI;
+        }
+        
+        public void setBaseURI(String baseURI){
+            this.baseURI = baseURI;
+        }
+        
 	public List<LexicalEntry> getEntries()
 	{
 		return entries;
 	}
+        
+        public List<LexicalEntry> getEntries(Language language)
+	{
+		List<LexicalEntry> entries_tmp = new ArrayList<LexicalEntry>();
+                for(LexicalEntry e : getEntries()){
+                    try{
+                        if(e.getLanguage().equals(language)) entries_tmp.add(e);
+                    }
+                    catch(Exception exp){
+                        System.err.println("Entry: "+e.toString()+"does NOT contain any language");
+                    }
+                }
+                return entries_tmp;
+	}
 	
 	public List<LexicalEntry> getEntriesWithCanonicalForm(String canonicalForm)
 	{
-		return map.get(canonicalForm);
+                return map.get(canonicalForm);
+
 	}
 	
 	public int size() {
@@ -100,8 +149,9 @@ public class Lexicon {
 		Set<Reference> references = new HashSet<Reference>();
 		
 		for (LexicalEntry entry: entries)
-		{
-			references.add(entry.getReference());
+		{   
+                    for (Sense sense : entry.getSenseBehaviours().keySet())
+                            references.add(sense.getReference());
 		}
 		
 		return references;
@@ -112,9 +162,9 @@ public class Lexicon {
 		return "";
 	}
 
-	public LexicalEntry createNewEntry(String canonicalForm) {
+	private LexicalEntry createNewEntry(String canonicalForm, Language language) {
 		
-		LexicalEntry entry = new LexicalEntry();
+		LexicalEntry entry = new LexicalEntry(language);
 		
 		entry.setCanonicalForm(canonicalForm);
 		
@@ -161,14 +211,19 @@ public class Lexicon {
 		return string;
 	}
 
-	public List<LexicalEntry> getEntriesForReference(String ref) {
+	public List<LexicalEntry> getEntriesForReference(String input_ref) {
 		
 		List<LexicalEntry> entries = new ArrayList<LexicalEntry>();
 		
 		for (LexicalEntry entry: this.entries)
 		{
-			if (entry.getReference().toString().equals(ref))
-				entries.add(entry);
+                    for(Reference ref: entry.getReferences()){
+                        if (ref.toString().equals(input_ref)) {
+                            entries.add(entry);
+                            break;
+                        }
+                    }
+			
 		}
 		
 		return entries;

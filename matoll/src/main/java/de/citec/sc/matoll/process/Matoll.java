@@ -2,6 +2,7 @@ package de.citec.sc.matoll.process;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.log4j.PropertyConfigurator;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -11,9 +12,6 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
@@ -26,37 +24,8 @@ import javax.xml.parsers.ParserConfigurationException;
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-//import core.
-import de.citec.sc.bimmel.learning.*;
-import de.citec.sc.bimmel.core.Dataset;
-import de.citec.sc.bimmel.core.FeatureVector;
-import de.citec.sc.bimmel.core.Instance;
-import de.citec.sc.bimmel.core.Label;
-
-
-
-import de.citec.sc.matoll.classifiers.FreqClassifier;
 import de.citec.sc.matoll.core.LexicalEntry;
 import de.citec.sc.matoll.core.Lexicon;
-import de.citec.sc.matoll.core.LexiconWithFeatures;
-import de.citec.sc.matoll.core.Provenance;
 import de.citec.sc.matoll.core.Reference;
 import de.citec.sc.matoll.evaluation.LexiconEvaluation;
 import de.citec.sc.matoll.io.Config;
@@ -64,7 +33,6 @@ import de.citec.sc.matoll.io.LexiconLoader;
 import de.citec.sc.matoll.io.LexiconSerialization;
 import de.citec.sc.matoll.patterns.PatternLibrary;
 import de.citec.sc.matoll.preprocessor.ModelPreprocessor;
-import de.citec.sc.matoll.preprocessor.ModelPreprocessorFactory;
 import de.citec.sc.matoll.utils.StanfordLemmatizer;
 
 import org.apache.jena.riot.RDFDataMgr;
@@ -77,11 +45,19 @@ import com.hp.hpl.jena.rdf.model.RDFNode;
 import com.hp.hpl.jena.rdf.model.Resource;
 import com.hp.hpl.jena.rdf.model.Statement;
 import com.hp.hpl.jena.rdf.model.StmtIterator;
-import de.citec.sc.matoll.utils.Debug;
+import de.citec.sc.matoll.classifiers.WEKAclassifier;
+import de.citec.sc.matoll.core.Language;
+import de.citec.sc.matoll.core.Provenance;
+import de.citec.sc.matoll.core.Sense;
+import de.citec.sc.matoll.utils.Learning;
 
 public class Matoll {
  
+        
 	private static Logger logger = LogManager.getLogger(Matoll.class.getName());
+        
+        
+        
 	/**
          * 
          * @param args
@@ -92,16 +68,14 @@ public class Matoll {
          * @throws IllegalAccessException
          * @throws ClassNotFoundException 
          */
-	public static void main(String[] args) throws IOException, ParserConfigurationException, SAXException, InstantiationException, IllegalAccessException, ClassNotFoundException {
+
+	public static void main(String[] args) throws IOException, ParserConfigurationException, SAXException, InstantiationException, IllegalAccessException, ClassNotFoundException, Exception {
+			
 		System.setOut(new PrintStream(new FileOutputStream("output")));	
-		Logger logger = LogManager.getLogger(Matoll.class.getName());
+		//Logger logger = LogManager.getLogger(Matoll.class.getName());
 		org.apache.log4j.BasicConfigurator.configure();
 
-		Debug debugger = new Debug(logger);
-                /*
-                activate debugger
-                */
-                debugger.setDebug(true);
+                
 
 		String directory;
 		String mode = "train";
@@ -109,7 +83,7 @@ public class Matoll {
 		String model_file = "model";
 		String output_lexicon;
 		String configFile;
-		String language;
+		Language language;
 		String classi;
 		Config config = null;
 		boolean coreference = false;
@@ -121,7 +95,7 @@ public class Matoll {
 		maxima = new HashMap<String,Double>();
 		
 		
-		Provenance provenance;
+		//Provenance provenance;
 		
 		Pattern p = Pattern.compile("^--(\\w+)=(\\w+|\\d+)$");
 		  
@@ -134,7 +108,7 @@ public class Matoll {
 		
 		}
 		
-		Classifier classifier;
+//		Classifier classifier;
 		
 		directory = args[1];
 		configFile = args[2];
@@ -154,13 +128,6 @@ public class Matoll {
 		coreference = config.getCoreference();
 		
 		language = config.getLanguage();
-		
-		if (language == null)
-		{
-			System.out.print("Set language to EN, DE, ES or JA in config file\n");
-			return;
-		}
-		
 				
 		for (int i=0; i < args.length; i++)
 		{
@@ -189,56 +156,65 @@ public class Matoll {
 			}		
 		}
 		
-		if (classi.equals("de.citec.sc.matoll.classifiers.FreqClassifier"))
-		{
-			classifier = new FreqClassifier("freq", frequency);
-			System.out.print("Instantiating" + classifier.getClass() + "\n");
-		}
-		else
-		{
-			classifier = (Classifier) Class.forName(classi).newInstance();
-			System.out.print("Instantiating "+classifier.getClass()+ "\n");
-		}
-		
+//		if (classi.equals("de.citec.sc.matoll.classifiers.FreqClassifier"))
+//		{
+//			classifier = new FreqClassifier("freq", frequency);
+//			System.out.print("Instantiating" + classifier.getClass() + "\n");
+//		}
+//		else
+//		{
+//			classifier = (Classifier) Class.forName(classi).newInstance();
+//			System.out.print("Instantiating "+classifier.getClass()+ "\n");
+//		}
+//		
 		LexiconLoader loader = new LexiconLoader();
-		
-		logger.info("Loading lexicon from: "+gold_standard_lexicon+"\n");
-		
+//		
+//		logger.info("Loading lexicon from: "+gold_standard_lexicon+"\n");
+//		
 		Lexicon gold = loader.loadFromFile(gold_standard_lexicon);
 		
 		File folder = new File(directory);
+		                
 		
-		Lexicon lexicon;
+		// Creating preprocessor
 		
-		// Creating preprocessor and setting coreference
-		
-		ModelPreprocessor preprocessor = ModelPreprocessorFactory.getPreprocessor(language);
-		
-		preprocessor.setCoreferenceResolution(coreference);
-		
-		LexiconWithFeatures lexiconwithFeatures = new LexiconWithFeatures();
+		ModelPreprocessor preprocessor = new ModelPreprocessor(language);
+                preprocessor.setCoreferenceResolution(coreference);
+				
+		Lexicon automatic_lexicon = new Lexicon();
+                if(config.getBaseUri()!=null) automatic_lexicon.setBaseURI(config.getBaseUri());
 		
 
-		PatternLibrary library = new PatternLibrary(debugger);
-		StanfordLemmatizer sl = new StanfordLemmatizer(language);
-		library.setLemmatizer(sl);
+		PatternLibrary library = new PatternLibrary();
+                if(language == Language.EN){
+                    StanfordLemmatizer sl = new StanfordLemmatizer(language);
+                    library.setLemmatizer(sl);
+                }
+		
 		
 		library.setPatterns(config.getPatterns());
 		
 	
-		String subj = null;
-		String obj = null;
+		String subj;
+		String obj;
 		
 		String reference = null;
 		
 		List<Model> sentences;
-		
-		for (final File file : listFilesForFolder(folder, new ArrayList<File>())) {
-			logger.info("found file "+file.getName());
-			
-			if (file.isFile() && file.toString().endsWith(".ttl")) {	
+		File[] files = folder.listFiles();
 
-				logger.info("Processing: "+file.toString()+"\n");	
+                int file_counter = 0;
+                /*
+                TODO: run this loop parralel and put together final lexicon afterwards;
+                */
+		for (final File file : files) {
+			
+			if (file.isFile() && file.toString().endsWith(".ttl")) {
+                            
+                                file_counter+=1;
+
+				logger.info("Processing: "+file.toString()+"  "+file_counter+"/"+files.length);
+                                
 								
 				Model model = RDFDataMgr.loadModel(file.toString());
 			 
@@ -261,9 +237,9 @@ public class Matoll {
 					sentence.write(output_stream_turtel,"TURTLE");
 			
 					//logger.info("Extract lexical entry for: "+sentence.toString()+"\n");	
-					library.extractLexicalEntries(sentence, lexiconwithFeatures);
+					library.extractLexicalEntries(sentence, automatic_lexicon);
 				}
-			
+                                model.close();
 				// FileOutputStream output = new FileOutputStream(new File(file.toString().replaceAll(".ttl", "_pci.ttl")));
 			
 				// RDFDataMgr.write(output, model, RDFFormat.TURTLE) ;
@@ -281,184 +257,49 @@ public class Matoll {
 		}
 		
 		logger.info("Extracted all entries \n");
-		logger.info("Lexicon contains "+Integer.toString(lexiconwithFeatures.getEntries().size())+" entries\n");
+		logger.info("Lexicon contains "+Integer.toString(automatic_lexicon.getEntries().size())+" entries\n");
 		
-		LexiconSerialization serializer = new LexiconSerialization();
+		LexiconSerialization serializer = new LexiconSerialization(language,library.getPatternSparqlMapping());
 		
-		List<LexicalEntry> entries = new ArrayList<LexicalEntry>();
+                
+                Model model = ModelFactory.createDefaultModel();
 		
-		FeatureVector vector;
-		logger.info("Starting "+mode.toString()+"\n");	
+		serializer.serialize(automatic_lexicon, model);
+		
+		FileOutputStream out = new FileOutputStream(new File(output_lexicon.replace(".lex","_beforeTraining.ttl")));
+		
+		RDFDataMgr.write(out, model, RDFFormat.TURTLE) ;
+                
+                out.close();
+		
+                
+                WEKAclassifier classifier = new WEKAclassifier(language);
+		
+		logger.info("Starting "+mode+"\n");	
 		boolean predict = true;
 		if (mode.equals("train"))
 		{
-			Dataset trainingSet = new Dataset();
-			
-			// process features
-			
-			int numPos = 0;
-			
-			int numNeg = 0;
-			
-			// get maxima
-			for (LexicalEntry entry: lexiconwithFeatures.getEntries())
-			{
-				vector = lexiconwithFeatures.getFeatureVector(entry);
-				
-				for (String feature: vector.getFeatures())
-				{
-					updateMaximum(feature,vector.getFeatureMap().get(feature),maxima);
-				}
-				
-			}
-			
-			for (LexicalEntry entry: lexiconwithFeatures.getEntries())
-			{
-				entry.setMappings(entry.computeMappings(entry.getSense()));
-				
-				// System.out.println("Checking entry with label: "+entry.getCanonicalForm()+"\n");
-				
-				// System.out.println(entry);
-				
-				vector = lexiconwithFeatures.getFeatureVector(entry);
-				
-				// preprocessing vector
-				
-				List<LexicalEntry> list = gold.getEntriesWithCanonicalForm(entry.getCanonicalForm());
-				
-				if (gold.contains(entry))
-				{
-					System.out.print("Lexicon contains "+entry+"\n");
-					
-					trainingSet.addInstance(new Instance(normalize(vector,maxima), new Label(1)));
-					logger.info("Adding training example: "+entry.getCanonicalForm()+" with label "+1);
-					numPos++;
-				
-				}
-			
-				else
-				{
-					// System.out.print("Lexicon does not contain "+entry+"\n");
-					
-					if (numNeg < numPos)
-					{
-						trainingSet.addInstance(new Instance(normalize(vector,maxima), new Label(0)));
-						// logger.info("Adding training example: "+entry.toString()+"\n");
-						logger.info("Adding training example: "+entry.getCanonicalForm()+" with label "+0);
-						numNeg++;
-					}
-				}
-				
-			}
-			
-			if (trainingSet.size() > 0)
-			
-			classifier.train(trainingSet);
-			
-			else
-			{
-				System.out.print("Can not train classifier as there are no training instances\n");
-				logger.info("Can not train classifier as there are no training instances\n");
-				writeByReference(lexiconwithFeatures);
-				System.out.print("Exit MATOLL\n");
-				logger.info("Exit MATOLL\n");
-				return;
-				
-			}
+                    /*
+                    during training only entries with a frequency of at least 2 are considered (per sense)
+                    */
+                    Learning.doTraining(automatic_lexicon,gold,maxima,language, classifier,2);
 		
 		}
-		
-		writeByReference(lexiconwithFeatures);
-		for (LexicalEntry entry: lexiconwithFeatures.getEntries())
-		{
-			// System.out.println(entry);
-			vector = lexiconwithFeatures.getFeatureVector(entry);
+                else{
+                    Learning.doPrediction(automatic_lexicon, gold, classifier, output, language);
+                }
+		writeByReference(automatic_lexicon);
+                logger.info("Write lexicon to "+output_lexicon+"\n");
+                model = ModelFactory.createDefaultModel();
 
-			logger.info("Prediction: for "+ entry.getCanonicalForm() + " is " +classifier.predict(vector)+"\n");
+                serializer.serialize(automatic_lexicon, model);
 
+                out = new FileOutputStream(new File(output_lexicon.replace(".lex",".ttl")));
 
-			if (classifier.predict(vector)==1)
-			{
-				provenance = new Provenance();
+                RDFDataMgr.write(out, model, RDFFormat.TURTLE) ;
 
-				provenance.setConfidence(classifier.predict(vector, 1));
-
-				provenance.setAgent("http://sc.citec.uni-bielefeld.de/matoll");
-
-				provenance.setEndedAtTime(new Date());
-
-				entry.setProvenance(provenance);
-
-				entries.add(entry);
-			}
-			else
-			{
-
-			}
-			
-		}
-		
-
-		  Collections.sort(entries, new Comparator<LexicalEntry>() {
-	
-			 
-			            public int compare(LexicalEntry one, LexicalEntry two) {
-			            		return (((LexicalEntry) one).getProvenance().getConfidence() >= ((LexicalEntry) two).getProvenance().getConfidence()) ? -1 : 1;               
-				            }
-				             
-				        });
-		  
-		 /*
-		  * TODO
-		  Exception in thread "main" java.lang.IllegalArgumentException: Comparison method violates its general contract!
-	at java.util.TimSort.mergeHi(TimSort.java:895)
-	at java.util.TimSort.mergeAt(TimSort.java:512)
-	at java.util.TimSort.mergeForceCollapse(TimSort.java:453)
-	at java.util.TimSort.sort(TimSort.java:250)
-	at java.util.Arrays.sort(Arrays.java:1435)
-	at java.util.Collections.sort(Collections.java:230)
-	at de.citec.sc.matoll.process.Matoll.main(Matoll.java:370)
-		  */
-		
-		
-		lexicon = new Lexicon();
-		
-		LexiconEvaluation eval = new LexiconEvaluation();
-		
-		FileWriter writer = new FileWriter(output);
-		
-		for (int i=0; i < entries.size(); i++)
-		{
-			lexicon.addEntry(entries.get(i));
-			
-			eval.setReferences(lexicon.getReferences());
-			
-			eval.evaluate(lexicon,gold);
-			
-			System.out.print("Considering entry "+entries.get(i)+"("+i+")\n");
-			
-			writer.write(i+"\t"+eval.getPrecision("lemma")+"\t"+eval.getRecall("lemma")+"\t"+eval.getFMeasure("lemma")+"\t"+eval.getPrecision("syntactic")+"\t"+eval.getRecall("syntactic")+"\t"+eval.getFMeasure("syntactic")+"\t"+eval.getPrecision("mapping")+"\t"+eval.getRecall("mapping")+"\t"+eval.getFMeasure("mapping")+"\n");
-			
-			System.out.println(i+"\t"+eval.getPrecision("lemma")+"\t"+eval.getRecall("lemma")+"\t"+eval.getFMeasure("lemma")+"\t"+eval.getPrecision("syntactic")+"\t"+eval.getRecall("syntactic")+"\t"+eval.getFMeasure("syntactic")+"\t"+eval.getPrecision("mapping")+"\t"+eval.getRecall("mapping")+"\t"+eval.getFMeasure("mapping"));
-			
-			writer.flush();
-			
-		}
-		
-		writer.close();
-		
-		
-	
-		logger.info("Write lexicon to "+output_lexicon+"\n");
-		Model model = ModelFactory.createDefaultModel();
-		
-		serializer.serialize(lexiconwithFeatures, model);
-		
-		FileOutputStream out = new FileOutputStream(new File(output_lexicon));
-		
-		RDFDataMgr.write(out, model, RDFFormat.TURTLE) ;
-		
-		// System.out.print("Lexicon: "+output.toString()+" written out\n");
+                out.close();
+                
 		
 		
 			
@@ -472,13 +313,12 @@ public class Matoll {
 		List<LexicalEntry> entries;
 		FileWriter writer;
 		Set<Reference> references = lexicon.getReferences();
-	
 		
 		
 		for (Reference ref: references)
 		{
 			String filename = ref.toString().replaceAll("http:\\/\\/","").replaceAll("\\/","_").replaceAll("\\.","_")+".lex";
-			logger.info("Write lexicon for reference "+ref.toString()+" to "+filename);
+			System.out.println("Write lexicon for reference "+ref.toString()+" to "+filename);
 			writer = new FileWriter(filename);
 			entries = lexicon.getEntriesForReference(ref.toString());
 			
@@ -494,26 +334,26 @@ public class Matoll {
 			
 		}
 	}
-        /**
-         * 
-         * @param vector
-         * @param max
-         * @return 
-         */
-	private static FeatureVector normalize(FeatureVector vector, HashMap<String,Double> max) {
-		
-		HashMap<String,Double> map;
-		
-		map = vector.getFeatureMap();
-		
-		for (String feature: map.keySet())
-		{
-			map.put(feature, new Double(map.get(feature).doubleValue() / max.get(feature).doubleValue()));
-		}
-		
-		return vector;
-		
-	}
+//        /**
+//         * 
+//         * @param vector
+//         * @param max
+//         * @return 
+//         */
+//	private static FeatureVector normalize(FeatureVector vector, HashMap<String,Double> max) {
+//		
+//		HashMap<String,Double> map;
+//		
+//		map = vector.getFeatureMap();
+//		
+//		for (String feature: map.keySet())
+//		{
+//			map.put(feature, new Double(map.get(feature).doubleValue() / max.get(feature).doubleValue()));
+//		}
+//		
+//		return vector;
+//		
+//	}
         /**
          * 
          * @param feature

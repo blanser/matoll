@@ -8,20 +8,19 @@ import com.hp.hpl.jena.rdf.model.RDFNode;
 import com.hp.hpl.jena.rdf.model.Statement;
 import com.hp.hpl.jena.rdf.model.StmtIterator;
 
-import de.citec.sc.matoll.core.LexiconWithFeatures;
-import de.citec.sc.matoll.utils.Debug;
+import de.citec.sc.matoll.core.Lexicon;
 import de.citec.sc.matoll.utils.Lemmatizer;
 
 public abstract class SparqlPattern {
 	
-
 	protected Lemmatizer Lemmatizer;
         
-        protected Debug Debugger;
 	
 	public abstract String getID();
+        
+        public abstract String getQuery();
 	
-	public abstract void extractLexicalEntries(Model model, LexiconWithFeatures lexicon); 
+	public abstract void extractLexicalEntries(Model model, Lexicon lexicon); 
 
 	public void setLemmatizer(Lemmatizer lemmatizer) {
 		
@@ -29,17 +28,6 @@ public abstract class SparqlPattern {
 		
 	}
         
-        public void setDebugger(Debug debugger) {
-		
-		Debugger = debugger;
-		
-	}
-        
-        public Debug getDebugger() {
-		
-		return Debugger;
-		
-	}
 	
 	public Lemmatizer getLemmatizer() {
 		return Lemmatizer;
@@ -63,7 +51,6 @@ public abstract class SparqlPattern {
 			stmt = iter.next();
 			
 	        sentences.add(stmt.getObject().toString());
-                Debugger.print("Sentence: "+stmt.getObject().toString(),SparqlPattern.class.getName());
 	    }
 		
 		return sentences;
@@ -85,13 +72,13 @@ public abstract class SparqlPattern {
 						
 			stmt = iter.next();
 
-                Debugger.print("Reference: "+stmt.getObject().toString(),SparqlPattern.class.getName());
 	        return stmt.getObject().toString();
 
                 }
 		
 		return null;
 
-	}	
+        }
+        
 	
 }

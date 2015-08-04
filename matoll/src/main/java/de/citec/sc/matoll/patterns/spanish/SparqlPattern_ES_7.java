@@ -1,68 +1,78 @@
 package de.citec.sc.matoll.patterns.spanish;
 
+import com.hp.hpl.jena.query.QueryExecution;
+import com.hp.hpl.jena.query.QueryExecutionFactory;
+import com.hp.hpl.jena.query.QuerySolution;
+import com.hp.hpl.jena.query.ResultSet;
 import java.util.List;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import com.hp.hpl.jena.rdf.model.Model;
-
-import de.citec.sc.bimmel.core.FeatureVector;
-import de.citec.sc.matoll.core.LexiconWithFeatures;
+import de.citec.sc.matoll.core.Language;
+import de.citec.sc.matoll.core.Lexicon;
 import de.citec.sc.matoll.patterns.SparqlPattern;
 import de.citec.sc.matoll.patterns.Templates;
 
 public class SparqlPattern_ES_7 extends SparqlPattern{
 
 	Logger logger = LogManager.getLogger(SparqlPattern_ES_7.class.getName());
+
+// aus spouse	
 	
-	
-	/*
-	 * SearchTerm 1:similar
-SearchTerm 2:al
-sentence:El toso es similar al iwai-zake . 
-1	El	_	d	DA0MS0	_	2	SPEC
-2	toso	_	a	AQ0MS0	_	3	SUBJ
-3	es	_	v	VSIP3S0	_	0	ROOT
-4	similar	_	a	AQ0CS0	_	3	MOD
-5	al	_	a	AQ0CS0	_	6	MOD
-6	iwai-zake	_	n	NCMS000	_	3	DO
-7	.	_	f	Fp	_	6	punct
-Adjective
+//	ID:291
+//	property subject: Joviano
+//	property object: Charito
+//	sentence:: 
+//	1	Charito	charito	n	NP00000	_	3	SUBJ
+//	2	se	se	p	P00CN000	_	3	DO
+//	3	casó	casar	v	VMIS3S0	_	0	ROOT
+//	4	con	con	s	SPS00	_	3	MOD
+//	5	Joviano	joviano	n	NP00000	_	4	COMP
+//	6	,	,	f	Fc	_	5	punct
+//	7	un	uno	d	DI0MS0	_	8	SPEC
+//	8	hijo	hijo	n	NCMS000	_	3	DO
+//	9	de	de	s	SPS00	_	8	MOD
+//	10	Varroniano	varroniano	n	NP00000	_	9	COMP
+//	11	.	.	f	Fp	_	10	punct
 
-NEW PARSE:
-1	El	el	d	DA0MS0	_	2	SPEC	_	_
-2	toso	toser	v	VMIP1S0	_	3	SUBJ	_	_
-3	es	ser	v	VSIP3S0	_	0	ROOT	_	_
-4	similar	similar	a	AQ0CS0	_	3	ATR	_	_
-5	a	a	s	SPS00	_	4	COMP	_	_
-6	el	el	d	DA0MS0	_	7	SPEC	_	_
-7	iwai-zake	iwai-zake	n	NCMS000	_	5	COMP	_	_
-8	.	.	f	Fp	_	7	punct	_	_
+ 
+	// reflexive verb: se casó con
+	// Template needs to be changed!!!
+    
+        // X verheiratet sich mit Y
+        // -> Reflexiv 
+        // X heiratete Y -> Transitive
+        @Override
+        public String getQuery() {
+            String query = "SELECT ?lemma ?e1_arg ?e2_arg ?prep  WHERE {"
+                            + "?verb <conll:cpostag> ?verb_pos ."
+                            + "?verb <conll:lemma> ?lemma ."
+                            + "FILTER regex(?verb_pos, \"VMIS\") ."
+
+                            // "DO" can also be "MPAS"
+                            + "?se <conll:lemma> \"se\" ."
+                            + "?se <conll:deprel> \"DO\" ."
+                            + "?se <conll:head> ?verb ."
+
+                            + "?e1 <conll:head> ?verb."
+                            + "?e1 <conll:deprel> \"SUBJ\" ."
 
 
-	 */
-	String query = "SELECT ?lemma ?e1_arg ?e2_arg ?prep  WHERE {"
-			+ "?y <conll:cpostag> \"v\" ."
-			+ "?y <conll:deprel> \"ROOT\" ."
-			+ "?adjective <conll:form> ?lemma . "
-			+ "?adjective <conll:deprel> ?lemma_grammar. "
-			+ "?adjective <conll:head> ?y ."
-			+ "?adjective <conll:cpostag> \"a\" . "
-			//+ "?adjective <conll:deprel> \"MOD\" . "
-			+ "?adjective <conll:deprel> \"ATR\" . "
-			+ "?e1 <conll:head> ?y . "
-			+ "?e1 <conll:deprel> ?deprel. "
-			+ "FILTER regex(?deprel, \"SUBJ\") ."
-			+ "?e2 <conll:head> ?y . "
-			+ "?e2 <conll:deprel> \"DO\" . "
-			+ "?p <conll:head> ?e2 . "
-			//+ "?p <conll:deprel> \"MOD\" . "
-			+ "?p <conll:form> ?prep . "
-			+ "?p <conll:cpostag> \"a\" . "
-			+ "?e1 <own:senseArg> ?e1_arg. "
-			+ "?e2 <own:senseArg> ?e2_arg. "
-			+ "}";
+                            // can be OBLC instead of MOD
+                            + "?p <conll:head> ?verb."
+                            + "?p <conll:deprel> \"MOD\" ."
+                            + "?p <conll:lemma> ?prep. "
+
+                            + "?e2 <conll:head> ?p."
+                            + "?e2 <conll:deprel> \"COMP \"."
+
+                            + "?e1 <own:senseArg> ?e1_arg. "
+                            + "?e2 <own:senseArg> ?e2_arg. "
+                            + "}";
+            return query;
+        }
 			
 	@Override
 	public String getID() {
@@ -70,17 +80,43 @@ NEW PARSE:
 	}
 
 	@Override
-	public void extractLexicalEntries(Model model, LexiconWithFeatures lexicon) {
-		FeatureVector vector = new FeatureVector();
-
-		vector.add("freq",1.0);
-		vector.add(this.getID(),1.0);
+	public void extractLexicalEntries(Model model, Lexicon lexicon) {
 		
 		List<String> sentences = this.getSentences(model);
 		
-		Templates.getAdjective(model, lexicon, vector, sentences, query, this.getReference(model), logger, this.getLemmatizer(), this.getDebugger());
+		QueryExecution qExec = QueryExecutionFactory.create(getQuery(), model) ;
+                ResultSet rs = qExec.execSelect() ;
+                String verb = null;
+                String e1_arg = null;
+                String e2_arg = null;
+                String preposition = null;
+
+                try {
+                 while ( rs.hasNext() ) {
+                         QuerySolution qs = rs.next();
+
+
+                         try{
+                                 verb = qs.get("?lemma").toString();
+                                 e1_arg = qs.get("?e1_arg").toString();
+                                 e2_arg = qs.get("?e2_arg").toString();	
+                                 preposition = qs.get("?prep").toString();	
+                          }
+	        	 catch(Exception e){
+	     	    	e.printStackTrace();
+                        }
+                     }
+                }
+                catch(Exception e){
+                    e.printStackTrace();
+                }
+                qExec.close() ;
+    
+		if(verb!=null && e1_arg!=null && e2_arg!=null && preposition!=null) {
+                    Templates.getIntransitiveVerb(model, lexicon, sentences, verb, e1_arg, e2_arg, preposition, this.getReference(model), logger, this.getLemmatizer(),Language.ES,getID());
+            } 
 		
-		
+	
 	}
 
 }

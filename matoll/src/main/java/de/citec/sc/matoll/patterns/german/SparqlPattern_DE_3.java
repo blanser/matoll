@@ -1,14 +1,17 @@
 package de.citec.sc.matoll.patterns.german;
 
+import com.hp.hpl.jena.query.QueryExecution;
+import com.hp.hpl.jena.query.QueryExecutionFactory;
+import com.hp.hpl.jena.query.QuerySolution;
+import com.hp.hpl.jena.query.ResultSet;
 import java.util.List;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import com.hp.hpl.jena.rdf.model.Model;
-
-import de.citec.sc.bimmel.core.FeatureVector;
-import de.citec.sc.matoll.core.LexiconWithFeatures;
+import de.citec.sc.matoll.core.Language;
+import de.citec.sc.matoll.core.Lexicon;
 import de.citec.sc.matoll.patterns.SparqlPattern;
 import de.citec.sc.matoll.patterns.Templates;
 
@@ -43,23 +46,26 @@ sentence:Haywood war zudem mit dem Model Iman Abdulmajid , der heutigen Ehefrau 
 ----------------------
 	*/
 		
-		String query = "SELECT ?lemma ?prep ?e1_arg ?e2_arg WHERE{"
-				+ "?e1 <conll:cpostag> \"N\" . "
-				+ "?y <conll:deprel> \"app\" . "
-				+ "?y <conll:cpostag> \"N\" . "
-				+ "?y <conll:lemma> ?lemma . "
-				+ "?y <conll:head> ?e1 . "
-				+ "?p <conll:form> ?prep ."
-				+ "?p <conll:deprel> \"pp\". "
-				+ "?p <conll:head> ?y ."
-				+ "?e2 <conll:head> ?p . "
-				+ "?e2 <conll:deprel> ?e2_grammar . "
-				+ "FILTER( regex(?e2_grammar, \"obj\") || regex(?e2_grammar, \"gmod\") || regex(?e2_grammar, \"pn\"))"
-				+ "?e2 <conll:cpostag> \"N\". "
-				+ "?e1 <own:senseArg> ?e1_arg. "
-				+ "?e2 <own:senseArg> ?e2_arg. "
-				+ "}";
-	
+        @Override
+        public String getQuery() {
+            String query = "SELECT ?lemma ?prep ?e1_arg ?e2_arg WHERE{"
+                            + "?e1 <conll:cpostag> \"N\" . "
+                            + "?y <conll:deprel> \"app\" . "
+                            + "?y <conll:cpostag> \"N\" . "
+                            + "?y <conll:lemma> ?lemma . "
+                            + "?y <conll:head> ?e1 . "
+                            + "?p <conll:form> ?prep ."
+                            + "?p <conll:deprel> \"pp\". "
+                            + "?p <conll:head> ?y ."
+                            + "?e2 <conll:head> ?p . "
+                            + "?e2 <conll:deprel> ?e2_grammar . "
+                            + "FILTER( regex(?e2_grammar, \"obj\") || regex(?e2_grammar, \"gmod\") || regex(?e2_grammar, \"pn\"))"
+                            + "?e2 <conll:cpostag> \"N\". "
+                            + "?e1 <own:senseArg> ?e1_arg. "
+                            + "?e2 <own:senseArg> ?e2_arg. "
+                            + "}";
+            return query;
+        }
 	
 	@Override
 	public String getID() {
@@ -67,15 +73,41 @@ sentence:Haywood war zudem mit dem Model Iman Abdulmajid , der heutigen Ehefrau 
 	}
 
 	@Override
-	public void extractLexicalEntries(Model model, LexiconWithFeatures lexicon) {
-		FeatureVector vector = new FeatureVector();
-		
-		vector.add("freq",1.0);
-		vector.add(this.getID(),1.0);
+	public void extractLexicalEntries(Model model, Lexicon lexicon) {
 		
 		List<String> sentences = this.getSentences(model);
 		
-		Templates.getNounWithPrep(model, lexicon, vector, sentences, query, this.getReference(model), logger, this.getLemmatizer(), this.getDebugger());
+		QueryExecution qExec = QueryExecutionFactory.create(getQuery(), model) ;
+                ResultSet rs = qExec.execSelect() ;
+                String noun = null;
+                String e1_arg = null;
+                String e2_arg = null;
+                String preposition = null;
+
+                try {
+                 while ( rs.hasNext() ) {
+                         QuerySolution qs = rs.next();
+
+
+                         try{
+                                 noun = qs.get("?lemma").toString();
+                                 e1_arg = qs.get("?e1_arg").toString();
+                                 e2_arg = qs.get("?e2_arg").toString();	
+                                 preposition = qs.get("?prep").toString();	
+                          }
+	        	 catch(Exception e){
+	     	    	e.printStackTrace();
+                        }
+                     }
+                }
+                catch(Exception e){
+                    e.printStackTrace();
+                }
+                qExec.close() ;
+    
+		if(noun!=null && e1_arg!=null && e2_arg!=null && preposition!=null) {
+                    Templates.getNounWithPrep(model, lexicon, sentences, noun, e1_arg, e2_arg, preposition, this.getReference(model), logger, this.getLemmatizer(),Language.DE,getID());
+            } 
 		
 	}
 

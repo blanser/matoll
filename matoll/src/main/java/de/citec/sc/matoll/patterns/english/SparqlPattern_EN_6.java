@@ -1,7 +1,6 @@
 package de.citec.sc.matoll.patterns.english;
 
-import java.util.ArrayList;
-import java.util.Date;
+
 import java.util.List;
 
 import org.apache.logging.log4j.LogManager;
@@ -12,23 +11,10 @@ import com.hp.hpl.jena.query.QueryExecutionFactory;
 import com.hp.hpl.jena.query.QuerySolution;
 import com.hp.hpl.jena.query.ResultSet;
 import com.hp.hpl.jena.rdf.model.Model;
-import com.hp.hpl.jena.rdf.model.RDFNode;
-import com.hp.hpl.jena.rdf.model.Statement;
-import com.hp.hpl.jena.rdf.model.StmtIterator;
-
-import de.citec.sc.bimmel.core.FeatureVector;
-import de.citec.sc.matoll.core.LexicalEntry;
-import de.citec.sc.matoll.core.LexiconWithFeatures;
-import de.citec.sc.matoll.core.Provenance;
-import de.citec.sc.matoll.core.Sense;
-import de.citec.sc.matoll.core.SenseArgument;
-import de.citec.sc.matoll.core.SimpleReference;
-import de.citec.sc.matoll.core.SyntacticArgument;
-import de.citec.sc.matoll.core.SyntacticBehaviour;
+import de.citec.sc.matoll.core.Language;
+import de.citec.sc.matoll.core.Lexicon;
 import de.citec.sc.matoll.patterns.SparqlPattern;
 import de.citec.sc.matoll.patterns.Templates;
-import de.citec.sc.matoll.process.Matoll;
-import de.citec.sc.matoll.utils.Lemmatizer;
 
 public class SparqlPattern_EN_6 extends SparqlPattern {
 
@@ -64,6 +50,9 @@ public class SparqlPattern_EN_6 extends SparqlPattern {
 	23	II	_	NNP	NNP	_	21	pobj
 	24	.	_	.	.	_	12	punct
 	----------------------*/
+        
+        @Override
+    public String getQuery() {
 	String query = "SELECT ?lemma ?e1_arg ?e2_arg WHERE"
 			+ "{ "
 			+ "?e1 <conll:form> ?e1_form . "
@@ -84,26 +73,52 @@ public class SparqlPattern_EN_6 extends SparqlPattern {
 			+ "?e1 <own:senseArg> ?e1_arg . "
 			+ "?e2 <own:senseArg> ?e2_arg . "
 			+ "}";
+        return query;
+    }
 	
 	
 
 	
-	public void extractLexicalEntries(Model model, LexiconWithFeatures lexicon) {
-		
-		FeatureVector vector = new FeatureVector();
-		
-		vector.add("freq",1.0);
-		vector.add(this.getID(),1.0);
+        @Override
+	public void extractLexicalEntries(Model model, Lexicon lexicon) {
 		
 		List<String> sentences = this.getSentences(model);
+                QueryExecution qExec = QueryExecutionFactory.create(getQuery(), model) ;
+                ResultSet rs = qExec.execSelect() ;
+                String verb = null;
+                String e1_arg = null;
+                String e2_arg = null;
+
+                try {
+                 while ( rs.hasNext() ) {
+                         QuerySolution qs = rs.next();
+
+                         try{
+                                 verb = qs.get("?lemma").toString();
+                                 e1_arg = qs.get("?e1_arg").toString();
+                                 e2_arg = qs.get("?e2_arg").toString();	
+                          }
+	        	 catch(Exception e){
+	     	    	e.printStackTrace();
+                        }
+                     }
+                }
+                catch(Exception e){
+                    e.printStackTrace();
+                }
+                qExec.close() ;
+    
+		if(verb!=null && e1_arg!=null && e2_arg!=null) {
+                    Templates.getTransitiveVerb(model, lexicon, sentences, verb, e1_arg, e2_arg, this.getReference(model), logger, this.getLemmatizer(),Language.EN,getID());
+            } 
 		
-		Templates.getTransitiveVerb(model, lexicon, vector, sentences, query, this.getReference(model), logger, this.getLemmatizer(), this.getDebugger());
 
 	}
 	
 	
 
 
+        @Override
 	public String getID() {
 		return "SPARQLPattern_EN_6";
 	}

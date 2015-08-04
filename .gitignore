@@ -1,4 +1,6 @@
 
+*.DS_Store
+
 *.prefs
 
 SentencePreprocessing/.classpath
@@ -16,3 +18,12 @@ matoll/Run_EN_P6_coref.lex
 *.lex
 
 matoll/nbactions.xml
+
+matoll/nb-configuration.xml
+/nbproject/private/
+*.log
+
+
+matoll/run.sh
+
+*.ttl

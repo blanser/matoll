@@ -1,14 +1,17 @@
 package de.citec.sc.matoll.patterns.spanish;
 
+import com.hp.hpl.jena.query.QueryExecution;
+import com.hp.hpl.jena.query.QueryExecutionFactory;
+import com.hp.hpl.jena.query.QuerySolution;
+import com.hp.hpl.jena.query.ResultSet;
 import java.util.List;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import com.hp.hpl.jena.rdf.model.Model;
-
-import de.citec.sc.bimmel.core.FeatureVector;
-import de.citec.sc.matoll.core.LexiconWithFeatures;
+import de.citec.sc.matoll.core.Language;
+import de.citec.sc.matoll.core.Lexicon;
 import de.citec.sc.matoll.patterns.SparqlPattern;
 import de.citec.sc.matoll.patterns.Templates;
 
@@ -31,23 +34,34 @@ public class SparqlPattern_ES_1 extends SparqlPattern{
 11	cartaginés	cartaginés	a	AQ0MS0	_	10	MOD	_	_
 12	.	.	f	Fp	_	11	punct	_	_
 
+1	Pese_a	pese_a	s	SPS00	_	4	MOD
+2	que	que	p	PR0CN000	_	1	COMP
+3	Buckethead	buckethead	n	NP00000	_	4	SUBJ
+4	escribió	escribir	v	VMIS3S0	_	0	ROOT
+5	"	"	f	Fe	_	4	punct
+6	Jordan	jordan	n	NP00000	_	12	SUBJ
+7	"	"	f	Fe	_	6	punct
+
+
 x verb y - ohne preposition
 	 */
-	String query = "SELECT ?lemma ?e1_arg ?e2_arg  WHERE {"
-			+ "?y <conll:postag> ?lemma_pos . "
-			//POSTAG nach VM prüfen Verbos principales (Hauptverb)
-			+ "FILTER regex(?lemma_pos, \"VMIP\") ."
-			+ "?y <conll:deprel> \"ROOT\" ."
-			+ "?y <conll:form> ?lemma . "
-			+ "?y <conll:deprel> ?lemma_grammar. "
-			+ "?e1 <conll:head> ?y . "
-			+ "?e1 <conll:deprel> ?deprel. "
-			+ "FILTER regex(?deprel, \"SUBJ\") ."
-			+ "?e2 <conll:head> ?y . "
-			+ "?e2 <conll:deprel> \"DO\" . "
-			+ "?e1 <own:senseArg> ?e1_arg. "
-			+ "?e2 <own:senseArg> ?e2_arg. "
-			+ "}";
+        @Override
+        public String getQuery() {
+            String query = "SELECT ?lemma ?e1_arg ?e2_arg  WHERE {"
+                            + "?verb <conll:postag> ?pos . "
+                            //POSTAG nach VM prüfen Verbos principales (Hauptverb)
+                            + "FILTER regex(?pos, \"VMI\") ."
+                            + "?verb <conll:lemma> ?lemma . "
+                            + "?subj <conll:head> ?verb . "
+                            + "?subj <conll:deprel> \"SUBJ\". "
+                            + "?dobj <conll:head> ?verb . "
+                            + "?dobj <conll:deprel> \"DO\" . "
+
+                            + "?subj <own:senseArg> ?e1_arg. "
+                            + "?dobj <own:senseArg> ?e2_arg. "
+                            + "}";
+            return query;
+        }
 	
 	@Override
 	public String getID() {
@@ -55,15 +69,39 @@ x verb y - ohne preposition
 	}
 
 	@Override
-	public void extractLexicalEntries(Model model, LexiconWithFeatures lexicon) {
-		FeatureVector vector = new FeatureVector();
-		
-		vector.add("freq",1.0);
-		vector.add(this.getID(),1.0);
+	public void extractLexicalEntries(Model model, Lexicon lexicon) {
 		
 		List<String> sentences = this.getSentences(model);
 		
-		Templates.getTransitiveVerb(model, lexicon, vector, sentences, query, this.getReference(model), logger, this.getLemmatizer(), this.getDebugger());
+		QueryExecution qExec = QueryExecutionFactory.create(getQuery(), model) ;
+                ResultSet rs = qExec.execSelect() ;
+                String verb = null;
+                String e1_arg = null;
+                String e2_arg = null;
+
+                try {
+                 while ( rs.hasNext() ) {
+                         QuerySolution qs = rs.next();
+
+
+                         try{
+                                 verb = qs.get("?lemma").toString();
+                                 e1_arg = qs.get("?e1_arg").toString();
+                                 e2_arg = qs.get("?e2_arg").toString();	
+                          }
+	        	 catch(Exception e){
+	     	    	e.printStackTrace();
+                        }
+                     }
+                }
+                catch(Exception e){
+                    e.printStackTrace();
+                }
+                qExec.close() ;
+    
+		if(verb!=null && e1_arg!=null && e2_arg!=null) {
+                    Templates.getTransitiveVerb(model, lexicon, sentences, verb, e1_arg, e2_arg, this.getReference(model), logger, this.getLemmatizer(),Language.ES,getID());
+            } 
 		
 		
 	}
