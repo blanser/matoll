@@ -1,0 +1,75 @@
+<token:token1_1>  <conll:cpostag>  "名詞" ;
+        <conll:deprel>      "_" ;
+        <conll:feats>       "_|_" ;
+        <conll:form>        "イヌ" ;
+        <conll:head>        <token:token1_2> ;
+        <conll:lemma>       "イヌ" ;
+        <conll:postag>      "一般" ;
+        <conll:wordnumber>  "1" ;
+        <own:partOf>        <class:class1> .
+
+<token:token1_6>  <conll:cpostag>  "助動詞" ;
+        <conll:deprel>      "_" ;
+        <conll:feats>       "特殊・ダ|連用形" ;
+        <conll:form>        "で" ;
+        <conll:head>        <token:token1_7> ;
+        <conll:lemma>       "だ" ;
+        <conll:postag>      "_" ;
+        <conll:wordnumber>  "6" ;
+        <own:partOf>        <class:class1> .
+
+<token:token1_4>  <conll:cpostag>  "助詞" ;
+        <conll:deprel>      "_" ;
+        <conll:feats>       "_|_" ;
+        <conll:form>        "は" ;
+        <conll:head>        <token:token1_7> ;
+        <conll:lemma>       "は" ;
+        <conll:postag>      "係助詞" ;
+        <conll:wordnumber>  "4" ;
+        <own:partOf>        <class:class1> .
+
+<token:token1_2>  <conll:cpostag>  "助詞" ;
+        <conll:deprel>      "_" ;
+        <conll:feats>       "_|_" ;
+        <conll:form>        "の" ;
+        <conll:head>        <token:token1_4> ;
+        <conll:lemma>       "の" ;
+        <conll:postag>      "連体化" ;
+        <conll:wordnumber>  "2" ;
+        <own:partOf>        <class:class1> .
+
+<token:token1_7>  <conll:cpostag>  "助動詞" ;
+        <conll:deprel>      "_" ;
+        <conll:feats>       "五段・ラ行アル|基本形" ;
+        <conll:form>        "ある" ;
+        <conll:head>        <token:token1_0> ;
+        <conll:lemma>       "ある" ;
+        <conll:postag>      "_" ;
+        <conll:wordnumber>  "7" ;
+        <own:partOf>        <class:class1> .
+
+<token:token1_5>  <conll:cpostag>  "名詞" ;
+        <conll:deprel>      "_" ;
+        <conll:feats>       "_|_" ;
+        <conll:form>        "オオカミ" ;
+        <conll:head>        <token:token1_6> ;
+        <conll:lemma>       "オオカミ" ;
+        <conll:postag>      "一般" ;
+        <conll:wordnumber>  "5" ;
+        <own:partOf>        <class:class1> .
+
+<token:token1_3>  <conll:cpostag>  "名詞" ;
+        <conll:deprel>      "_" ;
+        <conll:feats>       "_|_" ;
+        <conll:form>        "祖先" ;
+        <conll:head>        <token:token1_4> ;
+        <conll:lemma>       "祖先" ;
+        <conll:postag>      "一般" ;
+        <conll:wordnumber>  "3" ;
+        <own:partOf>        <class:class1> .
+
+<class:class1>  <conll:language>  "ja" ;
+        <conll:reference>  "http://dbpedia.org/ontology/species" ;
+        <conll:sentence>   "イヌの祖先はオオカミである" ;
+        <own:obj>          "オオカミ" ;
+        <own:subj>         "イヌ" .

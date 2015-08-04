@@ -1,0 +1,125 @@
+<token:token1_1>  <conll:cpostag>  "名詞" ;
+        <conll:deprel>      "_" ;
+        <conll:feats>       "_|_" ;
+        <conll:form>        "武" ;
+        <conll:head>        <token:token1_2> ;
+        <conll:lemma>       "武" ;
+        <conll:postag>      "固有名詞" ;
+        <conll:wordnumber>  "1" ;
+        <own:partOf>        <class:class1> .
+
+<token:token1_6>  <conll:cpostag>  "名詞" ;
+        <conll:deprel>      "_" ;
+        <conll:feats>       "_|_" ;
+        <conll:form>        "漫画" ;
+        <conll:head>        <token:token1_7> ;
+        <conll:lemma>       "漫画" ;
+        <conll:postag>      "一般" ;
+        <conll:wordnumber>  "6" ;
+        <own:partOf>        <class:class1> .
+
+<token:token1_10>  <conll:cpostag>  "名詞" ;
+        <conll:deprel>      "_" ;
+        <conll:feats>       "_|_" ;
+        <conll:form>        "しげる" ;
+        <conll:head>        <token:token1_11> ;
+        <conll:lemma>       "しげる" ;
+        <conll:postag>      "固有名詞" ;
+        <conll:wordnumber>  "10" ;
+        <own:partOf>        <class:class1> .
+
+<token:token1_4>  <conll:cpostag>  "名詞" ;
+        <conll:deprel>      "_" ;
+        <conll:feats>       "_|_" ;
+        <conll:form>        "枝" ;
+        <conll:head>        <token:token1_5> ;
+        <conll:lemma>       "枝" ;
+        <conll:postag>      "一般" ;
+        <conll:wordnumber>  "4" ;
+        <own:partOf>        <class:class1> .
+
+<token:token1_9>  <conll:cpostag>  "名詞" ;
+        <conll:deprel>      "_" ;
+        <conll:feats>       "_|_" ;
+        <conll:form>        "水木" ;
+        <conll:head>        <token:token1_10> ;
+        <conll:lemma>       "水木" ;
+        <conll:postag>      "固有名詞" ;
+        <conll:wordnumber>  "9" ;
+        <own:partOf>        <class:class1> .
+
+<token:token1_2>  <conll:cpostag>  "名詞" ;
+        <conll:deprel>      "_" ;
+        <conll:feats>       "_|_" ;
+        <conll:form>        "良" ;
+        <conll:head>        <token:token1_3> ;
+        <conll:lemma>       "良" ;
+        <conll:postag>      "固有名詞" ;
+        <conll:wordnumber>  "2" ;
+        <own:partOf>        <class:class1> .
+
+<token:token1_7>  <conll:cpostag>  "名詞" ;
+        <conll:deprel>      "_" ;
+        <conll:feats>       "_|_" ;
+        <conll:form>        "家" ;
+        <conll:head>        <token:token1_8> ;
+        <conll:lemma>       "家" ;
+        <conll:postag>      "接尾" ;
+        <conll:wordnumber>  "7" ;
+        <own:partOf>        <class:class1> .
+
+<token:token1_11>  <conll:cpostag>  "助詞" ;
+        <conll:deprel>      "_" ;
+        <conll:feats>       "_|_" ;
+        <conll:form>        "の" ;
+        <conll:head>        <token:token1_12> ;
+        <conll:lemma>       "の" ;
+        <conll:postag>      "連体化" ;
+        <conll:wordnumber>  "11" ;
+        <own:partOf>        <class:class1> .
+
+<token:token1_5>  <conll:cpostag>  "助詞" ;
+        <conll:deprel>      "_" ;
+        <conll:feats>       "_|_" ;
+        <conll:form>        "は" ;
+        <conll:head>        <token:token1_12> ;
+        <conll:lemma>       "は" ;
+        <conll:postag>      "係助詞" ;
+        <conll:wordnumber>  "5" ;
+        <own:partOf>        <class:class1> .
+
+<token:token1_3>  <conll:cpostag>  "名詞" ;
+        <conll:deprel>      "_" ;
+        <conll:feats>       "_|_" ;
+        <conll:form>        "布" ;
+        <conll:head>        <token:token1_4> ;
+        <conll:lemma>       "布" ;
+        <conll:postag>      "一般" ;
+        <conll:wordnumber>  "3" ;
+        <own:partOf>        <class:class1> .
+
+<class:class1>  <conll:language>  "ja" ;
+        <conll:reference>  "http://ja.dbpedia.org/property/配偶者" ;
+        <conll:sentence>   "武良布枝は漫画家・水木しげるの妻" ;
+        <own:obj>          "水木しげる" ;
+        <own:subj>         "武良布枝" .
+
+<token:token1_8>  <conll:cpostag>  "記号" ;
+        <conll:deprel>      "_" ;
+        <conll:feats>       "_|_" ;
+        <conll:form>        "・" ;
+        <conll:head>        <token:token1_12> ;
+        <conll:lemma>       "・" ;
+        <conll:postag>      "一般" ;
+        <conll:wordnumber>  "8" ;
+        <own:partOf>        <class:class1> .
+
+<token:token1_12>  <conll:cpostag>  "名詞" ;
+        <conll:deprel>      "_" ;
+        <conll:feats>       "_|_" ;
+        <conll:form>        "妻" ;
+        <conll:head>        <token:token1_0> ;
+        <conll:lemma>       "妻" ;
+        <conll:postag>      "一般" ;
+        <conll:wordnumber>  "12" ;
+        <own:partOf>        <class:class1> .

@@ -14,17 +14,27 @@ public class RDF {
 	
 	private static void convertSentenceToRDF(Model default_model,String input_sentence, String propSubj, String propObj, String language, String uri, int counter){
 		String class_token = "class"+Integer.toString(counter);
+		String input_sentence02 = input_sentence;
+		//System.out.println("input_sentence: "+input_sentence);
+		//input_sentence02.replace(" ", "");
+		if (language.equals("ja")) {
+			input_sentence = input_sentence.split("\t\t\t")[0];
+			//System.out.println("input sentence: "+input_sentence);
+		}
 		
 		String plain_sentence = "";
 		for (String item:input_sentence.split("\t\t")){
 			String tmp[] =item.split("\t");
+			// TODO first character gets lost for some reason
 			if (language.equals("ja")) {
+				//System.out.println("tmp[1] is "+tmp[1]);
 				plain_sentence+=tmp[1];
+				//System.out.println("plain_sentence is now "+plain_sentence);
 			} else {
 				plain_sentence+=" "+tmp[1];
 			}
 		}
-		plain_sentence = plain_sentence.substring(1);			
+		if (!language.equals("ja")) plain_sentence = plain_sentence.substring(1);			
 		Resource res_class_token = default_model.createResource("class:"+class_token)
 				.addProperty(default_model.createProperty("own:subj"),propSubj.toLowerCase())
 				.addProperty(default_model.createProperty("own:obj"),propObj.toLowerCase())
@@ -36,6 +46,7 @@ public class RDF {
 		
 		
 		int word_number = 0;
+		
 		for (String item:input_sentence.split("\t\t")){
 			word_number ++;
 			String[] x = item.split("\t");
@@ -85,6 +96,29 @@ public class RDF {
 				
 			}			
 			
+		}
+		
+		if (language.equals("ja")) {
+			String[] mwSplit = input_sentence02.split("\t\t\t");
+			String[] mwStruct = mwSplit[1].split("\t\t");
+			//System.out.println("bunsetsuStruct: "+bunSplit[1]);
+			//System.out.println("length of bunsetsuStruct: "+bunsetsuStruct.length);
+			for (int i=0;i<mwStruct.length;i++) {
+				//System.out.println("bunsetsu: "+bunsetsuStruct[i]);
+				Resource res_multiword = default_model.createResource("multiword:"+Integer.toString(counter)+"_"+i)
+						.addProperty(default_model.createProperty("conll:form"), mwStruct[i].split("\t")[1]);
+				res_multiword.addProperty(default_model.createProperty("own:partOf"), res_class_token);
+				String range = mwStruct[i].split("\t")[0];
+				int start = Integer.parseInt(range.split("-")[0]);
+				int end = start;
+				if (range.contains("-")) {
+					end = Integer.parseInt(range.split("-")[1]);
+				}
+				for (int j=start;j<=end;j++) {
+					default_model.getResource("token:token"+Integer.toString(counter)+"_"+Integer.toString(j)).
+						addProperty(default_model.createProperty("own:multiword"), res_multiword);
+				}
+			}
 		}
 		
 	}

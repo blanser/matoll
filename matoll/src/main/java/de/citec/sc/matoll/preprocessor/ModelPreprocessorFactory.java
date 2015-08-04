@@ -22,6 +22,7 @@ public class ModelPreprocessorFactory {
 			ModelPreprocessor processor = new ModelPreprocessor();
 			
 			processor.setPOS(pos);
+			processor.setLanguage(language);
 			
 			return processor;
 			
@@ -38,7 +39,7 @@ public class ModelPreprocessorFactory {
 			ModelPreprocessor processor = new ModelPreprocessor();
 			
 			processor.setPOS(pos);
-			
+			processor.setLanguage(language);
 			return processor;
 		}
 		
@@ -53,7 +54,23 @@ public class ModelPreprocessorFactory {
 			ModelPreprocessor processor = new ModelPreprocessor();
 			
 			processor.setPOS(pos);
+			processor.setLanguage(language);
+			return processor;
+		}
+		
+		if (language.equals("JA"))
+		{
+			Set<String> pos = new HashSet<String>();
 			
+			pos.add("_");
+			//pos.add("appos");
+			//pos.add("nn");
+			//pos.add("dobj");
+			
+			ModelPreprocessor processor = new ModelPreprocessor();
+			
+			processor.setPOS(pos);
+			processor.setLanguage(language);
 			return processor;
 		}
 		

@@ -8,6 +8,8 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -91,8 +93,9 @@ public class Matoll {
          * @throws ClassNotFoundException 
          */
 	public static void main(String[] args) throws IOException, ParserConfigurationException, SAXException, InstantiationException, IllegalAccessException, ClassNotFoundException {
-			
-		//Logger logger = LogManager.getLogger(Matoll.class.getName());
+		System.setOut(new PrintStream(new FileOutputStream("output")));	
+		Logger logger = LogManager.getLogger(Matoll.class.getName());
+		org.apache.log4j.BasicConfigurator.configure();
 
 		Debug debugger = new Debug(logger);
                 /*
@@ -154,7 +157,7 @@ public class Matoll {
 		
 		if (language == null)
 		{
-			System.out.print("Set language to EN, DE or ES in config file\n");
+			System.out.print("Set language to EN, DE, ES or JA in config file\n");
 			return;
 		}
 		
@@ -230,7 +233,8 @@ public class Matoll {
 		
 		List<Model> sentences;
 		
-		for (final File file : folder.listFiles()) {
+		for (final File file : listFilesForFolder(folder, new ArrayList<File>())) {
+			logger.info("found file "+file.getName());
 			
 			if (file.isFile() && file.toString().endsWith(".ttl")) {	
 
@@ -239,17 +243,22 @@ public class Matoll {
 				Model model = RDFDataMgr.loadModel(file.toString());
 			 
 				sentences = getSentences(model);
-			 
+				long timestamp = System.currentTimeMillis();
+				OutputStream output_stream_turtel = new FileOutputStream("/home/bettina/Dokumente/jawikiExtracted/ZZAAAC/AAAC_resources/SentencesProps/"+file.getName()+Long.toString(timestamp)+".ttl");
+				logger.info("writing file "+file.toString()+Long.toString(timestamp)+".ttl");
 				for (Model sentence: sentences)
 				{
 					//System.out.println(sentence.toString());
 					obj = getObject(sentence);
+					//logger.info("Object: "+obj+"\n");
 			 
 					subj = getSubject(sentence);
-			 
+					//logger.info("Subject: "+subj+"\n");
 					reference = getReference(sentence);
+					//logger.info("Reference: "+reference+"\n");
 			
 					preprocessor.preprocess(sentence,subj,obj);
+					sentence.write(output_stream_turtel,"TURTLE");
 			
 					//logger.info("Extract lexical entry for: "+sentence.toString()+"\n");	
 					library.extractLexicalEntries(sentence, lexiconwithFeatures);
@@ -258,8 +267,17 @@ public class Matoll {
 				// FileOutputStream output = new FileOutputStream(new File(file.toString().replaceAll(".ttl", "_pci.ttl")));
 			
 				// RDFDataMgr.write(output, model, RDFFormat.TURTLE) ;
-			
+				/* !!! */
+				
+				
+				output_stream_turtel.close();
+				/*long timestamp = System.currentTimeMillis();
+				OutputStream output_stream_turtel = new FileOutputStream(path_to_write+Long.toString(timestamp)+".ttl");
+				default_model.write(output_stream_turtel,"TURTLE");
+				output_stream_turtel.close();*/
+				/* !!! */
 			}
+			
 		}
 		
 		logger.info("Extracted all entries \n");
@@ -649,4 +667,16 @@ public class Matoll {
 		
 		return null;
 	}
+	
+	public static ArrayList<File> listFilesForFolder(final File folder, ArrayList<File> result) {
+	    for (final File fileEntry : folder.listFiles()) {
+	        if (fileEntry.isDirectory()) {
+	            listFilesForFolder(fileEntry, result);
+	        } else {
+	            result.add(fileEntry);
+	        }
+	    }
+	    return result;
+	}
+
 }

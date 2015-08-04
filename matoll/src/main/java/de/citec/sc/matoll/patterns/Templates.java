@@ -148,9 +148,10 @@ public class Templates {
 	    String prep = "";
 	    String noun = "";
 	    // match SPARQL query
+	    logger.info("query to be used: "+query+"\n");
 	    QueryExecution qExec = QueryExecutionFactory.create(query, model) ;
 	 	ResultSet rs = qExec.execSelect() ;
-	     
+	    logger.info("result set has "+rs.getRowNumber()+" entries\n");
 	 	try {
 	    	 while ( rs.hasNext() ) {
 	        	 QuerySolution qs = rs.next();
@@ -184,14 +185,15 @@ public class Templates {
 	        			
 	        			if (Lemmatizer != null)
 	        			{
-	        				String term = Lemmatizer.getLemma(noun)+"@en";
+	        				// TODO why?
+	        				String term = Lemmatizer.getLemma(noun);//+"@en";
 	        				logger.info("Lemmatized cannonical form:"+term+"/n");
                                                 debugger.print("Lemmatized cannonical form:"+term, "");
 	        				entry.setCanonicalForm(term);
 	        			}
 	        			else
 	        			{
-	        				entry.setCanonicalForm(noun+"@en");
+	        				entry.setCanonicalForm(noun);//+"@en");
 	        			}
 	        				
 	        			entry.setPOS("http://www.lexinfo.net/ontology/2.0/lexinfo#commonNoun");

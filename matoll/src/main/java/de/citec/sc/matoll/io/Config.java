@@ -48,6 +48,7 @@ import de.citec.sc.matoll.patterns.spanish.SparqlPattern_ES_6;
 import de.citec.sc.matoll.patterns.spanish.SparqlPattern_ES_7;
 import de.citec.sc.matoll.patterns.spanish.SparqlPattern_ES_8;
 import de.citec.sc.matoll.patterns.spanish.SparqlPattern_ES_9;
+import de.citec.sc.matoll.patterns.japanese.*;
 
 public class Config {
 
@@ -147,6 +148,15 @@ public class Config {
 					Patterns.add(new SparqlPattern_ES_9());
 					
 					logger.info("Adding patterns 1-9 (ES) to pattern library \n");
+				}
+				if (Language.equals("JA"))
+				{
+					Patterns = new ArrayList<SparqlPattern>();
+					
+					Patterns.add(new SparqlPattern_JA_1());
+					Patterns.add(new SparqlPattern_JA_2());
+					
+					logger.info("Adding pattern 1-2 (JA) to pattern library \n");
 				}
 			}
 			

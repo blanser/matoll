@@ -69,6 +69,7 @@ public class IndexReader {
 					// TODO JapaneseAnalyzer removes stop words by default; leave it that way?
 					if (queryParser.parse(subj).toString().length()==0 || queryParser.parse(obj).toString().length()==0) return results;
 					booleanQuery.add(queryParser.parse(term), BooleanClause.Occur.MUST);
+					System.out.println("parse term: "+booleanQuery);
 				} catch (Exception e) {
 					System.err.println("Problem with "+subj+" *** "+obj);
 				}

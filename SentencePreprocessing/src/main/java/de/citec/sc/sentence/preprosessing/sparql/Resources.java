@@ -52,11 +52,11 @@ public class Resources {
 	    } finally {
 	        inputStream.close();
 	    }
-	    for(String x:entities_raw.split("\n")){
+	    for(String x : entities_raw.split("\n")){
 	    	/*
 	    	 * 1,3 are the uri's
 	    	 */
-	    	//System.out.println("line in property file: "+x);
+	    	System.err.println("line in property file: "+x);
 	    	String subj = x.split("\t")[1];
 	    	String obj = x.split("\t")[2];
 	    	//System.out.println("subj: "+subj+" *** obj: "+obj);
@@ -143,7 +143,10 @@ public class Resources {
 	private static void writeEntries(List<String> entities, String path) {
 		try{
 			String output = "";
-			for(String entity:entities) output+="\n"+entity;
+			for(String entity:entities){
+				//System.err.println("entity to be written: "+entity);
+				output+="\n"+entity;
+			}
 			output=output.substring(1);
 			
 			PrintWriter writer = new PrintWriter(path);

@@ -78,7 +78,7 @@ public class StanfordLemmatizer implements Lemmatizer {
         return lemmas;
     }
 
-	@Override
+	//@Override
 	public String getLemma(String word) {
 		String lemma = "";
 		for (String x:lemmatize(word)){

@@ -1,0 +1,8 @@
+<Config>
+   <Language>JA</Language>
+   <Coreference>True</Coreference>
+   <OutputLexicon>Run_JA_coref.lex</OutputLexicon>
+   <GoldStandardLexicon>/home/bettina/animals_plants.rdf</GoldStandardLexicon>
+   <Output>Run_JA_coref.eval</Output>
+   <NumLexItems>1000</NumLexItems>
+</Config>

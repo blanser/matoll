@@ -3,7 +3,9 @@ package de.citec.sc.sentence.preprosessing.process;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -16,6 +18,7 @@ import de.citec.sc.sentence.preprosessing.lucene.IndexReader;
 public class Process {
 
 	public static void main(String[] args) throws IOException {
+		System.setOut(new PrintStream(new FileOutputStream("output")));
 		/*
 		 * examples for properties can be found under /src/test/resources/
 		 */
@@ -24,13 +27,16 @@ public class Process {
 			System.out.println("Run: java Process ontology/pathToPropertyFile");
 			System.exit(1);
 		}
-		String endpoint = "http://dbpedia.org/sparql";
+		//String endpoint = "http://dbpedia.org/sparql";
+		String endpoint = "http://ja.dbpedia.org/sparql";
 		Boolean with_sentences = true;
 		/*
 		 *in pathToIndex only one index for one language can be found 
 		 */
-		String pathToIndex = "/home/bettina/workspace03/IndexMAtoll";
-		String folderToSaveResourcesSentences = "/home/bettina/jaResources";
+		// String pathToIndex = "/home/bettina/workspace03/IndexMAtoll";
+		//String folderToSaveResourcesSentences = "/home/bettina/jaResources";
+		String pathToIndex = "/home/bettina/jaIdealSents/idealSents_index";
+		String folderToSaveResourcesSentences = "/home/bettina/jaIdealSents/idealSents_resources";
 		String language = "ja";
 		
 		IndexReader index = new IndexReader(pathToIndex,language);
