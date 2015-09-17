@@ -1,7 +1,8 @@
 
 
-import com.hp.hpl.jena.rdf.model.Model;
-import com.hp.hpl.jena.rdf.model.ModelFactory;
+import org.apache.jena.rdf.model.Model;
+import org.apache.jena.rdf.model.ModelFactory;
+
 import de.citec.sc.matoll.core.Language;
 import de.citec.sc.matoll.core.LexicalEntry;
 import de.citec.sc.matoll.core.Lexicon;
@@ -145,7 +146,7 @@ public class test7 {
                 
                 Model model = ModelFactory.createDefaultModel();
 		
-		LexiconSerialization serializer = new LexiconSerialization(Language.EN);
+		LexiconSerialization serializer = new LexiconSerialization(false);
 		
 		serializer.serialize(lexicon, model);
 		

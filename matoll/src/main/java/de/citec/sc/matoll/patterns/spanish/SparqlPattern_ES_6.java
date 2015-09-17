@@ -1,17 +1,18 @@
 package de.citec.sc.matoll.patterns.spanish;
 
-import com.hp.hpl.jena.query.QueryExecution;
-import com.hp.hpl.jena.query.QueryExecutionFactory;
-import com.hp.hpl.jena.query.QuerySolution;
-import com.hp.hpl.jena.query.ResultSet;
+import org.apache.jena.rdf.model.Model;
+import org.apache.jena.query.QueryExecution;
+import org.apache.jena.query.QueryExecutionFactory;
+import org.apache.jena.query.QuerySolution;
+import org.apache.jena.query.ResultSet;
 import java.util.List;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import com.hp.hpl.jena.rdf.model.Model;
 import de.citec.sc.matoll.core.Language;
 import de.citec.sc.matoll.core.Lexicon;
+import de.citec.sc.matoll.core.Sentence;
 import de.citec.sc.matoll.patterns.SparqlPattern;
 import de.citec.sc.matoll.patterns.Templates;
 
@@ -92,9 +93,7 @@ public class SparqlPattern_ES_6 extends SparqlPattern{
 
 	@Override
 	public void extractLexicalEntries(Model model, Lexicon lexicon) {
-		
-		List<String> sentences = this.getSentences(model);
-		
+				
 		QueryExecution qExec = QueryExecutionFactory.create(getQuery(), model) ;
                 ResultSet rs = qExec.execSelect() ;
                 String adjective = null;
@@ -124,7 +123,8 @@ public class SparqlPattern_ES_6 extends SparqlPattern{
                 qExec.close() ;
     
 		if(adjective!=null && e1_arg!=null && e2_arg!=null && preposition!=null) {
-                    Templates.getAdjective(model, lexicon, sentences, adjective, e1_arg, e2_arg, preposition, this.getReference(model), logger, this.getLemmatizer(),Language.ES,getID());
+                    Sentence sentence = this.returnSentence(model);
+                    Templates.getAdjective(model, lexicon, sentence, adjective, e1_arg, e2_arg, preposition, this.getReference(model), logger, this.getLemmatizer(),Language.ES,getID());
             }
 		
 	}

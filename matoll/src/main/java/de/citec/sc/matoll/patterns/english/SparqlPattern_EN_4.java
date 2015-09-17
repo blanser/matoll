@@ -1,118 +1,99 @@
 package de.citec.sc.matoll.patterns.english;
 
+import org.apache.jena.rdf.model.Model;
+import org.apache.jena.query.QueryExecution;
+import org.apache.jena.query.QueryExecutionFactory;
+import org.apache.jena.query.QuerySolution;
+import org.apache.jena.query.ResultSet;
 import java.util.List;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import com.hp.hpl.jena.query.QueryExecution;
-import com.hp.hpl.jena.query.QueryExecutionFactory;
-import com.hp.hpl.jena.query.QuerySolution;
-import com.hp.hpl.jena.query.ResultSet;
-import com.hp.hpl.jena.rdf.model.Model;
-
 import de.citec.sc.matoll.core.Language;
 import de.citec.sc.matoll.core.Lexicon;
+import de.citec.sc.matoll.core.Sentence;
 import de.citec.sc.matoll.patterns.SparqlPattern;
 import de.citec.sc.matoll.patterns.Templates;
 
+
 public class SparqlPattern_EN_4 extends SparqlPattern {
 
-	/*################################
-entity1_form:shriram
-entity2_form:google
-propSubject:ram shriram
-propObject:google
---------------
-entity1_grammar:nsubj
-entity2_grammar:pobj
---------------
-lemma:member
-lemma_grammar:null
-lemma_pos:nn
-depending dobj:
-depending advmod:
---------------
-query_name:query5
-intended_lexical_type:Noun
-entry:RelationalNoun("board member",<http://dbpedia.org/ontology/board>, propSubj = PrepositionalObject("of"), propObj = CopulativeArg)
---------------
-sentence:Kavitark Ram Shriram is a board member of Google and one of the first investors in Google . 
-1	Kavitark	_	NNP	NNP	_	3	nn
-2	Ram	_	NNP	NNP	_	3	nn
-3	Shriram	_	NNP	NNP	_	7	nsubj
-4	is	_	VBZ	VBZ	_	7	cop
-5	a	_	DT	DT	_	7	det
-6	board	_	NN	NN	_	7	nn
-7	member	_	NN	NN	_	0	null
-8	of	_	IN	IN	_	7	prep
-9	Google	_	NNP	NNP	_	8	pobj
-=>works only in fuzzy mode.
+	Logger logger = LogManager.getLogger(SparqlPattern_EN_4.class.getName());
 
-PropSubj:Oxford Brookes University
-PropObj:Janet Beer
-sentence:Professor Janet Beer is the Vice-Chancellor of Oxford Brookes University . 
-1	Professor	_	NNP	NNP	_	3	nn
-2	Janet	_	NNP	NNP	_	3	nn
-3	Beer	_	NNP	NNP	_	6	nsubj
-4	is	_	VBZ	VBZ	_	6	cop
-5	the	_	DT	DT	_	6	det
-6	Vice-Chancellor	_	NNP	NNP	_	0	null
-7	of	_	IN	IN	_	6	prep
-8	Oxford	_	NNP	NNP	_	10	nn
-9	Brookes	_	NNP	NNP	_	10	nn
-10	University	_	NNP	NNP	_	7	pobj
-11	.	_	.	.	_	6	punct
-----------------------
-
-
-*/
 	
-		Logger logger = LogManager.getLogger(SparqlPattern_EN_4.class.getName());
-
+	/*
+	 * 
+	PropSubj:Joe Wright
+	PropObj:Anoushka Shankar
+	sentence:Joe Wright is married to sitarist Anoushka Shankar , daughter of Ravi Shankar and half-sister of Norah Jones . 
+	1	Joe	_	NNP	NNP	_	2	nn
+	2	Wright	_	NNP	NNP	_	4	nsubjpass
+	3	is	_	VBZ	VBZ	_	4	auxpass
+	4	married	_	VBN	VBN	_	0	null
+	5	to	_	TO	TO	_	6	aux
+	6	sitarist	_	VB	VB	_	4	xcomp
+	7	Anoushka	_	NNP	NNP	_	8	nn
+	8	Shankar	_	NNP	NNP	_	6	dobj
+	9	,	_	,	,	_	8	punct
+	10	daughter	_	NN	NN	_	8	appos
+	11	of	_	IN	IN	_	10	prep
+	12	Ravi	_	NNP	NNP	_	13	nn
+	13	Shankar	_	NNP	NNP	_	11	pobj
+	14	and	_	CC	CC	_	10	cc
+	15	half-sister	_	NN	NN	_	10	conj
+	16	of	_	IN	IN	_	10	prep
+	17	Norah	_	NNP	NNP	_	18	nn
+	18	Jones	_	NNP	NNP	_	16	pobj
+	19	.	_	.	.	_	4	punct
+	----------------------
+	IGONORE sitarist: so x is married to y
+	 */
+	/*
+	 * TODO: Check lemma addition
+	 */
+        
         @Override
-    public String getQuery() {
-        String query = "SELECT ?lemma ?prefix ?e1_arg ?e2_arg ?prep WHERE"
-                        +"{ "
-                        +"{ ?y <conll:cpostag> \"NN\" . } "
-                        + " UNION "
-                        +"{ ?y <conll:cpostag> \"NNS\" . } "
-                        + " UNION "
-                        +"{ ?y <conll:cpostag> \"NNP\" . } "
-                        + "?y <conll:form> ?lemma . "
-                        +"OPTIONAL{"
-                        + "?lemma_nn <conll:head> ?y. "
-                        + "?lemma_nn <conll:form> ?prefix. "
-                        + "?lemma_nn <conll:deprel> \"nn\"."
-                        +"} "
-                        + "?verb <conll:head> ?y . "
-                        + "?verb <conll:deprel> \"cop\" ."
-                        + "?e1 <conll:head> ?y . "
-                        + "?e1 <conll:deprel> \"nsubj\" . "
-                        + "?p <conll:head> ?y . "
-                        + "?p <conll:deprel> \"prep\" . "
-                        + "?p <conll:form> ?prep . "
-                        + "?e2 <conll:head> ?p . "
-                        + "?e2 <conll:deprel> \"pobj\" . "
-                        + "?e1 <own:senseArg> ?e1_arg. "
-                        + "?e2 <own:senseArg> ?e2_arg. "
-                        + "}";
-        return query;
-    }
-		
-		
-
+        public String getQuery() {
+            String query = "SELECT ?lemma ?lemma_addition ?prep ?e1_arg ?e2_arg WHERE{"
+                            + "?e1 <conll:deprel> \"nsubjpass\" . "
+                            + "?e1 <conll:cpostag> ?e1_pos . "
+                            //+ "FILTER regex(?e1_pos, \"NN\") ."
+                            + "?e1 <conll:head> ?y . "
+                            + "?y <conll:cpostag> ?lemma_pos . "
+                            + "{?y <conll:cpostag> \"VBN\" . }"
+                            + "UNION"
+                            + "{?y <conll:cpostag> \"VBG\" . }"
+                            + "?y <conll:form> ?lemma . "
+                            +"OPTIONAL{"
+                            + "?lemma_nn <conll:head> ?y. "
+                            + "?lemma_nn <conll:form> ?lemma_addition. "
+                            + "?lemma_nn <conll:deprel> \"nn\"."
+                            +"} "
+                            + "?verb <conll:head> ?y . "
+                            + "?verb <conll:deprel> \"auxpass\" . "
+                            + "?p <conll:head> ?y . "
+                            + "?p <conll:deprel> \"prep\" . "
+                            + "?p <conll:form> ?prep . "
+                            + "?e2 <conll:head> ?p . "
+                            + "?e2 <conll:deprel> \"pobj\" . "
+                            + "?e1 <own:senseArg> ?e1_arg. "
+                            + "?e2 <own:senseArg> ?e2_arg. "
+                            + "}";
+            return query;
+        }
+	
         @Override
 	public void extractLexicalEntries(Model model, Lexicon lexicon) {
 
-		List<String> sentences = this.getSentences(model);
-		
-		QueryExecution qExec = QueryExecutionFactory.create(getQuery(), model) ;
+                
+                QueryExecution qExec = QueryExecutionFactory.create(getQuery(), model) ;
                 ResultSet rs = qExec.execSelect() ;
-                String noun = null;
+                String adjective = null;
                 String e1_arg = null;
                 String e2_arg = null;
                 String preposition = null;
+                String lemma_addition = "";
 
                 try {
                  while ( rs.hasNext() ) {
@@ -120,10 +101,16 @@ sentence:Professor Janet Beer is the Vice-Chancellor of Oxford Brookes Universit
 
 
                          try{
-                                 noun = qs.get("?lemma").toString();
+                                 adjective = qs.get("?lemma").toString();
                                  e1_arg = qs.get("?e1_arg").toString();
                                  e2_arg = qs.get("?e2_arg").toString();	
                                  preposition = qs.get("?prep").toString();	
+                                 try{
+                                     lemma_addition = qs.get("?lemma_addition").toString();
+                                 }
+                                 catch(Exception e){
+                                     
+                                 }
                           }
 	        	 catch(Exception e){
 	     	    	e.printStackTrace();
@@ -135,11 +122,14 @@ sentence:Professor Janet Beer is the Vice-Chancellor of Oxford Brookes Universit
                 }
                 qExec.close() ;
     
-		if(noun!=null && e1_arg!=null && e2_arg!=null && preposition!=null) {
-                    Templates.getNounWithPrep(model, lexicon, sentences, noun, e1_arg, e2_arg, preposition, this.getReference(model), logger, this.getLemmatizer(),Language.EN,getID());
+		if(adjective!=null && e1_arg!=null && e2_arg!=null && preposition!=null) {
+                    Sentence sentence = this.returnSentence(model);
+                    if(!lemma_addition.equals("")){
+                        Templates.getAdjective(model, lexicon, sentence, lemma_addition+" "+adjective, e1_arg, e2_arg, preposition, this.getReference(model), logger, this.getLemmatizer(),Language.EN,getID());
+                    }
+                    else Templates.getAdjective(model, lexicon, sentence, adjective, e1_arg, e2_arg, preposition, this.getReference(model), logger, this.getLemmatizer(),Language.EN,getID());
             } 
-		
-	     
+				
 	}
 
         @Override

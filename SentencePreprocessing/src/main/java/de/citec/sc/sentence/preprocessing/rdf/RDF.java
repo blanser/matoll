@@ -5,17 +5,17 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.List;
 
-import com.hp.hpl.jena.rdf.model.Model;
-import com.hp.hpl.jena.rdf.model.ModelFactory;
-import com.hp.hpl.jena.rdf.model.Resource;
 import de.citec.sc.sentence.preprocessing.process.Language;
 import java.io.FileNotFoundException;
 import java.io.PrintWriter;
+import org.apache.jena.rdf.model.Model;
+import org.apache.jena.rdf.model.ModelFactory;
+import org.apache.jena.rdf.model.Resource;
 
 public class RDF {
 	
 	
-	private static void convertSentenceToRDF(Model default_model,String input_sentence, String propSubj, String propObj, Language language, String uri, int counter){
+	private static void convertSentenceToRDF(Model default_model,String input_sentence, String propSubj, String propObj, String propSubj_uri, String propObj_uri ,Language language, String uri, int counter){
 		String class_token = "class"+Integer.toString(counter);
 		String input_sentence02 = input_sentence;
 		//System.out.println("input_sentence: "+input_sentence);
@@ -41,6 +41,8 @@ public class RDF {
 		Resource res_class_token = default_model.createResource("class:"+class_token)
 				.addProperty(default_model.createProperty("own:subj"),propSubj.toLowerCase())
 				.addProperty(default_model.createProperty("own:obj"),propObj.toLowerCase())
+                                .addProperty(default_model.createProperty("own:subjuri"),default_model.createLiteral(propSubj_uri))
+                                .addProperty(default_model.createProperty("own:objuri"),default_model.createLiteral(propObj_uri))
 				.addProperty(default_model.createProperty("conll:reference"),uri)
 				.addProperty(default_model.createProperty("conll:language"),language.toString().toLowerCase())
 				.addProperty(default_model.createProperty("conll:sentence"),plain_sentence);
@@ -127,47 +129,58 @@ public class RDF {
 	}
 	
 	public static void writeModel(List<List<String>> input_sentences, String path_to_write,Language language, String uri, boolean additionalOutput) throws IOException{
-		if(!path_to_write.endsWith("/"))path_to_write+="/";
-		Model default_model = ModelFactory.createDefaultModel();
-                StringBuilder string_builder = new StringBuilder();
-		int counter = 0;
-		for(List<String> input: input_sentences) {
-			counter+=1;
-			String input_sentence = input.get(0);
-                        if(additionalOutput){
-                            string_builder.append("ID:");
-                            string_builder.append(Integer.toString(counter));
-                            string_builder.append("\n");
-                            string_builder.append("property subject: ");
-                            string_builder.append(input.get(1));
-                            string_builder.append("\n");
-                            string_builder.append("property object: ");
-                            string_builder.append(input.get(2));
-                            string_builder.append("\n");
-                            string_builder.append("sentence:: \n");
-                            string_builder.append(input_sentence.replace("\t\t", "\n"));
-                            string_builder.append("\n\n");
+                if(input_sentences.size()>0){
+                    if(!path_to_write.endsWith("/"))path_to_write+="/";
+                    Model default_model = ModelFactory.createDefaultModel();
+                    StringBuilder string_builder = new StringBuilder();
+                    int counter = 0;
+                    for(List<String> input: input_sentences) {
+                            counter+=1;
+                            String input_sentence = input.get(0);
+                            if(additionalOutput){
+                                string_builder.append("ID:");
+                                string_builder.append(Integer.toString(counter));
+                                string_builder.append("\n");
+                                string_builder.append("property subject: ");
+                                string_builder.append(input.get(1));
+                                string_builder.append("\n");
+                                string_builder.append("property subject uri: ");
+                                string_builder.append(input.get(3));
+                                string_builder.append("\n");
+                                string_builder.append("property object: ");
+                                string_builder.append(input.get(2));
+                                string_builder.append("\n");
+                                string_builder.append("property object uri: ");
+                                string_builder.append(input.get(4));
+                                string_builder.append("\n");
+                                string_builder.append("sentence:: \n");
+                                string_builder.append(input_sentence.replace("\t\t", "\n"));
+                                string_builder.append("\n\n");
+                            }
+
+                            String propSubj = input.get(1);
+                            String propObj = input.get(2);
+                            String propSubj_uri = input.get(3);
+                            String propObj_uri = input.get(4);
+                            convertSentenceToRDF(default_model,input_sentence,propSubj,propObj,propSubj_uri,propObj_uri,language,uri,counter);
+                    }
+                    long timestamp = System.currentTimeMillis();
+                    OutputStream output_stream_turtel = new FileOutputStream(path_to_write+Long.toString(timestamp)+".ttl");
+                    default_model.write(output_stream_turtel,"TURTLE");
+                    output_stream_turtel.close();
+                    if(additionalOutput){
+                        PrintWriter writer;
+                        try {
+                                writer = new PrintWriter(path_to_write+Long.toString(timestamp)+".txt");
+                                writer.println(string_builder.toString());
+                                writer.close();
+                        } catch (FileNotFoundException e) {
+                                // TODO Auto-generated catch block
+                                e.printStackTrace();
                         }
-                        
-			String propSubj = input.get(1);
-			String propObj = input.get(2);
-			convertSentenceToRDF(default_model,input_sentence,propSubj,propObj,language,uri,counter);
-		}
-		long timestamp = System.currentTimeMillis();
-		OutputStream output_stream_turtel = new FileOutputStream(path_to_write+Long.toString(timestamp)+".ttl");
-		default_model.write(output_stream_turtel,"TURTLE");
-		output_stream_turtel.close();
-                if(additionalOutput){
-                    PrintWriter writer;
-                    try {
-                            writer = new PrintWriter(path_to_write+Long.toString(timestamp)+".txt");
-                            writer.println(string_builder.toString());
-                            writer.close();
-                    } catch (FileNotFoundException e) {
-                            // TODO Auto-generated catch block
-                            e.printStackTrace();
                     }
                 }
+		
                 
 		
 	}

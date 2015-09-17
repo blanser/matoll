@@ -1,24 +1,25 @@
 package de.citec.sc.matoll.patterns.german;
 
-import com.hp.hpl.jena.query.QueryExecution;
-import com.hp.hpl.jena.query.QueryExecutionFactory;
-import com.hp.hpl.jena.query.QuerySolution;
-import com.hp.hpl.jena.query.ResultSet;
+import org.apache.jena.rdf.model.Model;
+import org.apache.jena.query.QueryExecution;
+import org.apache.jena.query.QueryExecutionFactory;
+import org.apache.jena.query.QuerySolution;
+import org.apache.jena.query.ResultSet;
 import java.util.List;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import com.hp.hpl.jena.rdf.model.Model;
 import de.citec.sc.matoll.core.Language;
 import de.citec.sc.matoll.core.Lexicon;
 import de.citec.sc.matoll.patterns.SparqlPattern;
 import de.citec.sc.matoll.patterns.Templates;
+import org.apache.jena.shared.Lock;
 
-public class SparqlPattern_DE_5 extends SparqlPattern{
+public class SparqlPattern_DE_5_old extends SparqlPattern{
 
 	
-	Logger logger = LogManager.getLogger(SparqlPattern_DE_5.class.getName());
+	Logger logger = LogManager.getLogger(SparqlPattern_DE_5_old.class.getName());
 	
 	/*
 PropSubj:Oswald Mosley
@@ -91,10 +92,7 @@ sentence:Alessandra Martines ist eine Cousine zweiten Grades von Carla Bruni , d
                             + "{?e1 <conll:head> ?y }. "
                             + "?e2 <conll:head> ?y . "
                             + "?e2 <conll:deprel> ?e2_grammar . "
-                            + "FILTER( regex(?e2_grammar, \"obj\") || regex(?e2_grammar, \"gmod\") || regex(?e2_grammar, \"pn\"))"
-                            //+ "FILTER regex(?e2_grammar, \"obj\") ."
-                            //+ "UNION"
-                            //+ "{FILTER regex(?e2_grammar, \"gmod\") .}"
+                            + "FILTER( regex(?e2_grammar, \"obj\") || regex(?e2_grammar, \"gmod\") || regex(?e2_grammar, \"pn\")) ."
                             + "?e1 <own:senseArg> ?e1_arg. "
                             + "?e2 <own:senseArg> ?e2_arg. "
                             + "}";
@@ -114,6 +112,7 @@ sentence:Alessandra Martines ist eine Cousine zweiten Grades von Carla Bruni , d
 		
 		List<String> sentences = this.getSentences(model);
 		
+                model.enterCriticalSection(Lock.READ) ;
 		QueryExecution qExec = QueryExecutionFactory.create(getQuery(), model) ;
                 ResultSet rs = qExec.execSelect() ;
                 String noun = null;
@@ -139,9 +138,10 @@ sentence:Alessandra Martines ist eine Cousine zweiten Grades von Carla Bruni , d
                     e.printStackTrace();
                 }
                 qExec.close() ;
+                model.leaveCriticalSection() ;
     
 		if(noun!=null && e1_arg!=null && e2_arg!=null) {
-                    Templates.getNoun(model, lexicon, sentences, noun, e1_arg, e2_arg, this.getReference(model), logger, this.getLemmatizer(),Language.DE,getID());
+                    Templates.getNounPossessive(model, lexicon, sentences, noun, e1_arg, e2_arg, this.getReference(model), logger, this.getLemmatizer(),Language.DE,getID());
             } 
 		
 		

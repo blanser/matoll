@@ -2,7 +2,6 @@ package de.citec.sc.matoll.process;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.log4j.PropertyConfigurator;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -27,29 +26,34 @@ import javax.xml.parsers.ParserConfigurationException;
 import de.citec.sc.matoll.core.LexicalEntry;
 import de.citec.sc.matoll.core.Lexicon;
 import de.citec.sc.matoll.core.Reference;
-import de.citec.sc.matoll.evaluation.LexiconEvaluation;
 import de.citec.sc.matoll.io.Config;
 import de.citec.sc.matoll.io.LexiconLoader;
 import de.citec.sc.matoll.io.LexiconSerialization;
 import de.citec.sc.matoll.patterns.PatternLibrary;
 import de.citec.sc.matoll.preprocessor.ModelPreprocessor;
 import de.citec.sc.matoll.utils.StanfordLemmatizer;
+import de.citec.sc.matoll.classifiers.WEKAclassifier;
+import de.citec.sc.matoll.core.Language;
+import de.citec.sc.matoll.utils.Learning;
 
 import org.apache.jena.riot.RDFDataMgr;
 import org.apache.jena.riot.RDFFormat;
+
 import org.xml.sax.SAXException;
 
-import com.hp.hpl.jena.rdf.model.Model;
-import com.hp.hpl.jena.rdf.model.ModelFactory;
-import com.hp.hpl.jena.rdf.model.RDFNode;
-import com.hp.hpl.jena.rdf.model.Resource;
-import com.hp.hpl.jena.rdf.model.Statement;
-import com.hp.hpl.jena.rdf.model.StmtIterator;
-import de.citec.sc.matoll.classifiers.WEKAclassifier;
-import de.citec.sc.matoll.core.Language;
-import de.citec.sc.matoll.core.Provenance;
-import de.citec.sc.matoll.core.Sense;
-import de.citec.sc.matoll.utils.Learning;
+import java.util.Arrays;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ForkJoinPool;
+import java.util.stream.Collectors;
+import static java.util.stream.Collectors.toList;
+import java.util.stream.Stream;
+
+import org.apache.jena.rdf.model.Model;
+import org.apache.jena.rdf.model.ModelFactory;
+import org.apache.jena.rdf.model.RDFNode;
+import org.apache.jena.rdf.model.Resource;
+import org.apache.jena.rdf.model.Statement;
+import org.apache.jena.rdf.model.StmtIterator;
 
 public class Matoll {
  
@@ -85,11 +89,12 @@ public class Matoll {
 		String configFile;
 		Language language;
 		String classi;
-		Config config = null;
+		//final Config config = null;
 		boolean coreference = false;
 		int no_entries = 1000;
 		String output;
 		double frequency = 2.0;
+                
 		
 		HashMap<String,Double> maxima; 
 		maxima = new HashMap<String,Double>();
@@ -113,7 +118,7 @@ public class Matoll {
 		directory = args[1];
 		configFile = args[2];
 		
-		config = new Config();
+		final Config config = new Config();
 		
 		config.loadFromFile(configFile);
 		
@@ -128,6 +133,8 @@ public class Matoll {
 		coreference = config.getCoreference();
 		
 		language = config.getLanguage();
+                
+                final StanfordLemmatizer sl = new StanfordLemmatizer(language);
 				
 		for (int i=0; i < args.length; i++)
 		{
@@ -155,17 +162,7 @@ public class Matoll {
 			    }
 			}		
 		}
-		
-//		if (classi.equals("de.citec.sc.matoll.classifiers.FreqClassifier"))
-//		{
-//			classifier = new FreqClassifier("freq", frequency);
-//			System.out.print("Instantiating" + classifier.getClass() + "\n");
-//		}
-//		else
-//		{
-//			classifier = (Classifier) Class.forName(classi).newInstance();
-//			System.out.print("Instantiating "+classifier.getClass()+ "\n");
-//		}
+
 //		
 		LexiconLoader loader = new LexiconLoader();
 //		
@@ -173,7 +170,6 @@ public class Matoll {
 //		
 		Lexicon gold = loader.loadFromFile(gold_standard_lexicon);
 		
-		File folder = new File(directory);
 		                
 		
 		// Creating preprocessor
@@ -182,12 +178,12 @@ public class Matoll {
                 preprocessor.setCoreferenceResolution(coreference);
 				
 		Lexicon automatic_lexicon = new Lexicon();
-                if(config.getBaseUri()!=null) automatic_lexicon.setBaseURI(config.getBaseUri());
+                automatic_lexicon.setBaseURI(config.getBaseUri());
 		
-
+                
 		PatternLibrary library = new PatternLibrary();
                 if(language == Language.EN){
-                    StanfordLemmatizer sl = new StanfordLemmatizer(language);
+                    //sl = new StanfordLemmatizer(language);
                     library.setLemmatizer(sl);
                 }
 		
@@ -201,65 +197,54 @@ public class Matoll {
 		String reference = null;
 		
 		List<Model> sentences;
-		File[] files = folder.listFiles();
-
-                int file_counter = 0;
-                /*
-                TODO: run this loop parralel and put together final lexicon afterwards;
-                */
-		for (final File file : files) {
-			
-			if (file.isFile() && file.toString().endsWith(".ttl")) {
-                            
-                                file_counter+=1;
-
-				logger.info("Processing: "+file.toString()+"  "+file_counter+"/"+files.length);
-                                
-								
-				Model model = RDFDataMgr.loadModel(file.toString());
-			 
-				sentences = getSentences(model);
-				long timestamp = System.currentTimeMillis();
-				OutputStream output_stream_turtel = new FileOutputStream("/home/bettina/Dokumente/jawikiExtracted/ZZAAAC/AAAC_resources/SentencesProps/"+file.getName()+Long.toString(timestamp)+".ttl");
-				logger.info("writing file "+file.toString()+Long.toString(timestamp)+".ttl");
-				for (Model sentence: sentences)
-				{
-					//System.out.println(sentence.toString());
-					obj = getObject(sentence);
-					//logger.info("Object: "+obj+"\n");
-			 
-					subj = getSubject(sentence);
-					//logger.info("Subject: "+subj+"\n");
-					reference = getReference(sentence);
-					//logger.info("Reference: "+reference+"\n");
-			
-					preprocessor.preprocess(sentence,subj,obj);
-					sentence.write(output_stream_turtel,"TURTLE");
-			
-					//logger.info("Extract lexical entry for: "+sentence.toString()+"\n");	
-					library.extractLexicalEntries(sentence, automatic_lexicon);
-				}
-                                model.close();
-				// FileOutputStream output = new FileOutputStream(new File(file.toString().replaceAll(".ttl", "_pci.ttl")));
-			
-				// RDFDataMgr.write(output, model, RDFFormat.TURTLE) ;
-				/* !!! */
-				
-				
-				output_stream_turtel.close();
-				/*long timestamp = System.currentTimeMillis();
-				OutputStream output_stream_turtel = new FileOutputStream(path_to_write+Long.toString(timestamp)+".ttl");
-				default_model.write(output_stream_turtel,"TURTLE");
-				output_stream_turtel.close();*/
-				/* !!! */
-			}
-			
-		}
+                
+                List<File> list_files = new ArrayList<>();
+                 
+                if(config.getFiles().isEmpty()){
+                    File folder = new File(directory);
+                    File[] files = folder.listFiles();
+                    list_files.addAll(Arrays.asList(files));
+                }
+                else{
+                    list_files.addAll(config.getFiles());
+                }
+		
+                
+//                ForkJoinPool commonPool = ForkJoinPool.commonPool();
+//                System.out.println(commonPool.getParallelism());   
+//                /*
+//                add -Djava.util.concurrent.ForkJoinPool.common.parallelism=5 in run.sh
+//                */
+//                Stream<Lexicon> stream;
+//            stream = list_files.parallelStream()
+//                    .filter(f->f.isFile()&&f.toString().endsWith(".ttl"))
+//                    .map((File f)->{
+//                        logger.info("Processing: "+f.toString());
+//                        return createLexicon(f,config,sl);
+//                    });
+//                Callable<List<Lexicon>> task = () -> stream.collect(toList());
+//                ForkJoinPool forkJoinPool = new ForkJoinPool(2);
+//                List<Lexicon> lexicon_list = forkJoinPool.submit(task).get();
+                
+                List<Lexicon> lexicon_list= list_files.stream()
+                    .filter(f->f.isFile()&&f.toString().endsWith(".ttl"))
+                    .map((File f)->{
+                        logger.info("Processing: "+f.toString());
+                        return createLexicon(f,config,sl);
+                    })
+                    .collect(Collectors.toList());
+                
+                
+                lexicon_list.stream().forEach((l) -> {
+                    automatic_lexicon.addLexicon(l);
+                 });
+                       
+                
 		
 		logger.info("Extracted all entries \n");
 		logger.info("Lexicon contains "+Integer.toString(automatic_lexicon.getEntries().size())+" entries\n");
 		
-		LexiconSerialization serializer = new LexiconSerialization(language,library.getPatternSparqlMapping());
+		LexiconSerialization serializer = new LexiconSerialization(library.getPatternSparqlMapping(),config.removeStopwords());
 		
                 
                 Model model = ModelFactory.createDefaultModel();
@@ -288,7 +273,7 @@ public class Matoll {
                 else{
                     Learning.doPrediction(automatic_lexicon, gold, classifier, output, language);
                 }
-		writeByReference(automatic_lexicon);
+		writeByReference(automatic_lexicon,language);
                 logger.info("Write lexicon to "+output_lexicon+"\n");
                 model = ModelFactory.createDefaultModel();
 
@@ -304,12 +289,55 @@ public class Matoll {
 		
 			
 	}
+        
+        private static Lexicon createLexicon(File file, Config config, StanfordLemmatizer sl) {
+            Language language = config.getLanguage();
+            ModelPreprocessor preprocessor = new ModelPreprocessor(language);
+            preprocessor.setCoreferenceResolution(config.getCoreference());
+            PatternLibrary library = new PatternLibrary();
+            if(language == Language.EN){
+                library.setLemmatizer(sl);
+            }
+            library.setPatterns(config.getPatterns());
+                
+            Lexicon lexicon = new Lexicon();
+            lexicon.setBaseURI(config.getBaseUri());
+
+            Model model = RDFDataMgr.loadModel(file.toString());
+            try{
+                List<Model> sentences = getSentences(model);
+                sentences.stream().map((sentence) -> {
+                    //System.out.println(sentence.toString());
+                    String obj = getObject(sentence);
+                    String subj = getSubject(sentence);
+                    String reference = getReference(sentence);
+                    preprocessor.preprocess(sentence,subj,obj);
+                    return sentence;
+                }).forEach((sentence) -> {
+                    //logger.info("Extract lexical entry for: "+sentence.toString()+"\n");
+                    library.extractLexicalEntries(sentence, lexicon);
+                });
+                model.close();
+                // FileOutputStream output = new FileOutputStream(new File(file.toString().replaceAll(".ttl", "_pci.ttl")));
+
+                // RDFDataMgr.write(output, model, RDFFormat.TURTLE) ;
+            }
+            catch(Exception e){
+            }
+            
+            
+            return lexicon;
+            
+        }
+        
+        
+
         /**
          * 
          * @param lexicon
          * @throws IOException 
          */
-	private static void writeByReference(Lexicon lexicon) throws IOException {
+	private static void writeByReference(Lexicon lexicon, Language language) throws IOException {
 		List<LexicalEntry> entries;
 		FileWriter writer;
 		Set<Reference> references = lexicon.getReferences();
@@ -317,7 +345,7 @@ public class Matoll {
 		
 		for (Reference ref: references)
 		{
-			String filename = ref.toString().replaceAll("http:\\/\\/","").replaceAll("\\/","_").replaceAll("\\.","_")+".lex";
+			String filename = language.toString()+"_"+ref.toString().replaceAll("http:\\/\\/","").replaceAll("\\/","_").replaceAll("\\.","_")+".lex";
 			System.out.println("Write lexicon for reference "+ref.toString()+" to "+filename);
 			writer = new FileWriter(filename);
 			entries = lexicon.getEntriesForReference(ref.toString());

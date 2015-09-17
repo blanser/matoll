@@ -1,8 +1,6 @@
 package de.citec.sc.matoll.core;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 public class LexicalEntry {
@@ -12,6 +10,9 @@ public class LexicalEntry {
 	String CanonicalForm;
 	
 	String POS;
+        
+        Preposition preposition;
+
         
         /*
         Set default to English
@@ -75,7 +76,7 @@ public class LexicalEntry {
                     if(mappingReferenceProvenance.containsKey(sense)){
                         Provenance provenance = mappingReferenceProvenance.get(sense);
                         if(provenance.getPatternset()!=null)for(String pattern:provenance.getPatternset())string+="Pattern: "+pattern+"\n";
-                        if(provenance.getSentences()!=null)for(String sentence:provenance.getLongestSentences(5))string+="Sentence: "+sentence+"\n";
+                        if(provenance.getSentences()!=null)for(Sentence sentence:provenance.getShortestSentences(5))string+="Sentence: "+sentence.getSentence()+"\n";
                     }
                 }
 		
@@ -269,7 +270,16 @@ public class LexicalEntry {
 	public String getPOS() {
 		return POS;
 	}
+        
+        public Preposition getPreposition() {
+            if(preposition==null) return null;
+            if(preposition.getCanonicalForm().equals("")) return null;
+            return preposition;
+        }
 
+        public void setPreposition(Preposition preposition) {
+            this.preposition = preposition;
+        }
 
 	public void setPOS(String pos) {
 		POS = pos;

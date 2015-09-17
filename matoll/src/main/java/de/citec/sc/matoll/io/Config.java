@@ -31,19 +31,16 @@ import de.citec.sc.matoll.patterns.english.SparqlPattern_EN_3;
 import de.citec.sc.matoll.patterns.english.SparqlPattern_EN_4;
 import de.citec.sc.matoll.patterns.english.SparqlPattern_EN_5;
 import de.citec.sc.matoll.patterns.english.SparqlPattern_EN_6;
-import de.citec.sc.matoll.patterns.english.SparqlPattern_EN_7;
-import de.citec.sc.matoll.patterns.english.SparqlPattern_EN_8;
-import de.citec.sc.matoll.patterns.english.SparqlPattern_EN_9;
 import de.citec.sc.matoll.patterns.german.SparqlPattern_DE_1;
-import de.citec.sc.matoll.patterns.german.SparqlPattern_DE_10;
 import de.citec.sc.matoll.patterns.german.SparqlPattern_DE_2;
-import de.citec.sc.matoll.patterns.german.SparqlPattern_DE_3;
+import de.citec.sc.matoll.patterns.german.SparqlPattern_DE_3_a;
+import de.citec.sc.matoll.patterns.german.SparqlPattern_DE_3_b;
 import de.citec.sc.matoll.patterns.german.SparqlPattern_DE_4;
-import de.citec.sc.matoll.patterns.german.SparqlPattern_DE_5;
+import de.citec.sc.matoll.patterns.german.SparqlPattern_DE_5_a;
+import de.citec.sc.matoll.patterns.german.SparqlPattern_DE_5_b;
 import de.citec.sc.matoll.patterns.german.SparqlPattern_DE_6;
-import de.citec.sc.matoll.patterns.german.SparqlPattern_DE_7;
-import de.citec.sc.matoll.patterns.german.SparqlPattern_DE_8;
-import de.citec.sc.matoll.patterns.german.SparqlPattern_DE_9;
+import de.citec.sc.matoll.patterns.german.SparqlPattern_DE_7_a;
+import de.citec.sc.matoll.patterns.german.SparqlPattern_DE_7_b;
 import de.citec.sc.matoll.patterns.spanish.SparqlPattern_ES_1;
 import de.citec.sc.matoll.patterns.spanish.SparqlPattern_ES_2;
 import de.citec.sc.matoll.patterns.spanish.SparqlPattern_ES_2b;
@@ -73,7 +70,13 @@ public class Config {
 	Language Language = EN;
 	Integer numItems;
 	String Frequency;
-        String BaseUri;
+        String BaseUri = "http://dblexipedia.org/";
+        
+        boolean RemoveStopwords = false;
+        
+        List<File> files = new ArrayList<>();
+
+   
 
 	
 	List<SparqlPattern> Patterns = null;
@@ -119,9 +122,6 @@ public class Config {
 					Patterns.add(new SparqlPattern_EN_4());
 					Patterns.add(new SparqlPattern_EN_5());
 					Patterns.add(new SparqlPattern_EN_6());
-					Patterns.add(new SparqlPattern_EN_7());
-					Patterns.add(new SparqlPattern_EN_8());
-                                        Patterns.add(new SparqlPattern_EN_9());
 					
 					logger.info("Adding patterns 1-8 (EN) to pattern library \n");
 				}
@@ -130,15 +130,15 @@ public class Config {
 					Patterns = new ArrayList<SparqlPattern>();
 					
 					Patterns.add(new SparqlPattern_DE_1());
-					Patterns.add(new SparqlPattern_DE_2());
-					Patterns.add(new SparqlPattern_DE_3());
-					Patterns.add(new SparqlPattern_DE_4());
-					Patterns.add(new SparqlPattern_DE_5());
-					Patterns.add(new SparqlPattern_DE_6());
-					Patterns.add(new SparqlPattern_DE_7());
-					Patterns.add(new SparqlPattern_DE_8());
-					Patterns.add(new SparqlPattern_DE_9());
-					Patterns.add(new SparqlPattern_DE_10());
+                                        Patterns.add(new SparqlPattern_DE_2());
+                                        Patterns.add(new SparqlPattern_DE_3_a());
+                                        Patterns.add(new SparqlPattern_DE_3_b());
+                                        Patterns.add(new SparqlPattern_DE_4());
+                                        Patterns.add(new SparqlPattern_DE_5_a());
+                                        Patterns.add(new SparqlPattern_DE_5_b());
+                                        Patterns.add(new SparqlPattern_DE_6());
+                                        Patterns.add(new SparqlPattern_DE_7_a());
+                                        Patterns.add(new SparqlPattern_DE_7_b());
 					
 					logger.info("Adding patterns 1-10 (DE) to pattern library \n");
 				}
@@ -178,6 +178,12 @@ public class Config {
 			{				
 				if (node.getTextContent().equals("True")) this.Coreference = true;
 				if (node.getTextContent().equals("False")) this.Coreference = false;
+			}
+                        
+                        if (node.getNodeName().equals("RemoveStopwords"))
+			{				
+				if (node.getTextContent().equals("True")) this.RemoveStopwords = true;
+				if (node.getTextContent().equals("False")) this.RemoveStopwords = false;
 			}
 			
 			if (node.getNodeName().equals("GoldStandardLexicon"))
@@ -240,6 +246,25 @@ public class Config {
 				}
 
 			}
+                        
+                        if (node.getNodeName().equals("Files"))
+			{				
+				NodeList patterns = node.getChildNodes();
+				
+				for (int j = 0; j <  patterns.getLength(); j++) {
+			
+					Node pattern = patterns.item(j);
+					
+					if (pattern.getNodeName().equals("File"))
+					{
+						files.add(new File(pattern.getTextContent()));
+						
+					}	
+						
+				}
+
+			}
+                        
 		}
 		
 	}
@@ -306,6 +331,10 @@ public class Config {
 	public Boolean getCoreference() {
 		return Coreference;
 	}
+        
+        public Boolean removeStopwords() {
+		return RemoveStopwords;
+	}
 
 	public String getFrequency()
 	{
@@ -345,6 +374,9 @@ public class Config {
         
         public String getBaseUri() {
             return BaseUri;
+        }
+         public List<File> getFiles() {
+            return files;
         }
 
 }

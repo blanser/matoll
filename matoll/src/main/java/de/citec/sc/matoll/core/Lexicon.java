@@ -1,10 +1,24 @@
 package de.citec.sc.matoll.core;
+import de.citec.sc.matoll.io.LexiconSerialization;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.stream.Collectors;
+import org.apache.jena.rdf.model.Model;
+import org.apache.jena.rdf.model.ModelFactory;
+import org.apache.jena.riot.RDFDataMgr;
+import org.apache.jena.riot.RDFFormat;
 
 
 public class Lexicon {
@@ -39,6 +53,12 @@ public class Lexicon {
 		this.baseURI = baseURI;
 	}
 	
+        public void addLexicon(Lexicon lex){
+            lex.getEntries().stream().forEach((e) -> {
+                this.addEntry(e);
+            });
+        }
+        
 	public void addEntry(LexicalEntry entry)
 	{
 		
@@ -228,4 +248,111 @@ public class Lexicon {
 		
 		return entries;
 	}
+        
+        public List<Preposition> getPrepositions(){
+            List<Preposition> prepositions = new ArrayList<>();
+            
+            prepositions = this.entries.stream()
+                    .filter(e->e.getPreposition()!=null)
+                    .map((LexicalEntry e)->{return e.getPreposition();})
+                    .collect(Collectors.toList());
+            return prepositions;
+        }
+        
+        /**
+         * Returns all top k (e.g. 1000) senses, created by a given pattern from the lexicon. Additionaly writes each selected entry into a septerated file.
+         * @param pattern_name Name of the pattern to look for
+         * @param topK Number of best (according to frequency) entries (senses) with are returned
+         * @param path Path to folder, where each entry is saved
+         * @return 
+         */
+        public List<String> getTopKEntriesForPattern(String pattern_name, int topK, String path){
+            System.out.println("Start with: "+pattern_name);
+            List<String> results = new ArrayList<>();
+            Map<Sense,Integer> hm = new HashMap<>();
+            Map<String,List<Provenance>> hm2 = new HashMap<>();
+            
+            LexiconSerialization serial = new LexiconSerialization(false);
+            
+            class EntryClass{
+                LexicalEntry entry;
+                int frequency = 0;
+
+                public LexicalEntry getEntry() {
+                    return entry;
+                }
+
+                public int getFrequency() {
+                    return frequency;
+                }
+                public EntryClass(LexicalEntry entry, int frequency){
+                    this.entry = entry;
+                    this.frequency=frequency;
+                }
+            }
+            
+            List<EntryClass> test = new ArrayList<>();
+            
+            entries.stream().forEach((entry) -> {
+                entry.getSenseBehaviours().keySet().stream().forEach((sense) -> {
+                    Provenance provenance = entry.getProvenance(sense);
+                    if (provenance.getPatternset().contains(pattern_name)) {
+                        LexicalEntry newEntry = new LexicalEntry(entry.getLanguage());
+                        newEntry.setPOS(entry.getPOS());
+                        newEntry.setURI(entry.getURI());
+                        newEntry.addAllSyntacticBehaviour(entry.getSenseBehaviours().get(sense), sense);
+                        newEntry.addProvenance(provenance, sense);
+                        if(entry.getPreposition()!=null){
+                            newEntry.setPreposition(entry.getPreposition());
+                        }
+                        newEntry.setCanonicalForm(entry.getCanonicalForm());
+                        EntryClass tmp = new EntryClass(newEntry,provenance.getFrequency());
+                        test.add(tmp);
+                    }
+                });
+            });
+         
+            
+            Collections.sort(test, (EntryClass ec1, EntryClass ec2) ->{
+                    return Integer.valueOf(ec2.getFrequency()).compareTo(ec1.getFrequency());
+            });
+            int counter = 0;
+            for(EntryClass ec : test){
+                if(counter<topK){
+                    LexicalEntry entry = ec.getEntry();
+                    String name = pattern_name+"_"+Integer.toString(counter);
+                    String output = name+" "+entry.getCanonicalForm()+" "+ec.getFrequency()+" "+entry.getPOS();
+                    output = entry.getReferences().stream().map((r) -> " "+r.getURI()).reduce(output, String::concat);
+                    if(entry.getPreposition()!=null) output+=" "+entry.getPreposition().getCanonicalForm();
+                    for(Sense sense : entry.getSenseBehaviours().keySet()){
+                        Provenance provenance = entry.getProvenance(sense);
+                        for(Sentence sentence : provenance.getShortestSentences(5)) output+=" "+sentence.getSentence();
+                    }
+                    results.add(output);
+                    System.out.println(output);
+                    /*
+                    Write each entry in seperate File
+                    */
+                    Lexicon output_lexicon = new Lexicon();
+                    output_lexicon.setBaseURI(baseURI);
+                    output_lexicon.addEntry(entry);
+                    Model model = ModelFactory.createDefaultModel();
+                    serial.serialize(output_lexicon, model);		
+                    try {
+                        FileOutputStream out = new FileOutputStream(new File(path+name+".ttl"));
+                        RDFDataMgr.write(out, model, RDFFormat.TURTLE) ;
+                        out.close();
+                    } catch (FileNotFoundException ex) {
+                        Logger.getLogger(Lexicon.class.getName()).log(Level.SEVERE, null, ex);
+                    } catch (IOException ex) {
+                        Logger.getLogger(Lexicon.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                    
+                    
+                }
+                counter+=1;
+                
+            }
+            return results;
+        }
 }
